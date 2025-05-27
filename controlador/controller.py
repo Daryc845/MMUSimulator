@@ -49,6 +49,37 @@ class Controller:
             time.sleep(0.05)
             if update_callback:
                 update_callback()
+    
+    def translate_virtual_to_physical(self, virtual_address):
+        """Función principal de la MMU para traducir direcciones"""
+        if not self.simulator.current_process:
+            return None
+
+        # Extraer número de página y offset
+        page_number = virtual_address // self.simulator.page_size
+        offset = virtual_address % self.simulator.page_size
+
+        process_data = self.simulator.processes[self.simulator.current_process]
+        page_table = process_data['page_table']
+
+        # Verificar si la página existe en el espacio virtual del proceso
+        if page_number >= process_data['pages_needed']:
+            return None
+
+        # Verificar si la página está en memoria física
+        if page_number in page_table:
+            page_entry = page_table[page_number]
+
+            if page_entry['status'] == PageStatus.VALID:
+                # Page Hit
+                physical_frame = page_entry['physical_frame']
+                physical_address = physical_frame * self.simulator.page_size + offset
+                return physical_address
+            else:
+                # Page Fault: podrías manejarlo aquí si lo deseas
+                return None
+
+        return None
 
     def reset_system(self):
         self.simulator.reset_system()
