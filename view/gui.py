@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
-from controlador.controller import Controller, ReplacementAlgorithm
+from controller.controller import Controller, ReplacementAlgorithm
 import random
 import time
 

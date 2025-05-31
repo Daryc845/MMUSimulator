@@ -2,7 +2,7 @@
 
 import random
 import time
-from modelo.memory import MemorySimulator, ReplacementAlgorithm, PageStatus
+from model.memory import MemorySimulator, ReplacementAlgorithm, PageStatus
 
 __all__ = ["Controller", "ReplacementAlgorithm", "PageStatus"]
 
