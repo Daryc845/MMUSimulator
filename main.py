@@ -1,4 +1,4 @@
-from vista.gui import MMUSimulatorGUI
+from view.gui import MMUSimulatorGUI
 import tkinter as tk
 
 def main():

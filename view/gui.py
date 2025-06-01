@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
-from controller.controller import Controller, ReplacementAlgorithm
+from controller.controller import Controller, ReplacementAlgorithm 
 import random
 import time
 
@@ -11,19 +11,17 @@ class MMUSimulatorGUI:
         self.root.geometry("1200x800")
         self.root.configure(bg='#2c3e50')
 
-        # Usar el controlador
         self.controller = Controller()
 
         self.setup_styles()
         self.create_widgets()
-        self.update_displays()
-
+        
+        self.root.after(100, self.update_displays) 
+        
     def setup_styles(self):
-        """Configurar estilos de la interfaz"""
         style = ttk.Style()
         style.theme_use('clam')
         
-        # Configurar colores
         style.configure('Title.TLabel', 
                        font=('Arial', 16, 'bold'),
                        foreground='#ecf0f1',
@@ -40,50 +38,35 @@ class MMUSimulatorGUI:
                        borderwidth=2)
     
     def create_widgets(self):
-        """Crear todos los widgets de la interfaz"""
-        # Título principal
         title_label = ttk.Label(self.root, 
                                text="🖥️ Simulador MMU y Gestión de Memoria Virtual",
                                style='Title.TLabel')
         title_label.pack(pady=10)
         
-        # Frame principal con pestañas
         notebook = ttk.Notebook(self.root)
         notebook.pack(fill='both', expand=True, padx=10, pady=5)
         
-        # Pestaña 1: Traducción de Direcciones
         self.create_address_translation_tab(notebook)
-        
-        # Pestaña 2: Gestión de Procesos
         self.create_process_management_tab(notebook)
-        
-        # Pestaña 3: Estado del Sistema
         self.create_system_status_tab(notebook)
-        
-        # Pestaña 4: Análisis y Estadísticas
         self.create_analysis_tab(notebook)
     
     def create_address_translation_tab(self, parent):
-        """Crear pestaña de traducción de direcciones"""
         frame = ttk.Frame(parent, style='Custom.TFrame')
         parent.add(frame, text="🔄 Traducción de Direcciones")
         
-        # Frame superior: entrada de datos
         input_frame = ttk.LabelFrame(frame, text="Entrada de Direcciones", padding=10)
         input_frame.pack(fill='x', padx=10, pady=5)
         
-        # Dirección simbólica
         ttk.Label(input_frame, text="Dirección Simbólica:").grid(row=0, column=0, sticky='w', padx=5)
         self.symbolic_entry = ttk.Entry(input_frame, width=30)
         self.symbolic_entry.grid(row=0, column=1, padx=5)
-        self.symbolic_entry.insert(0, "main_function_start")
+        self.symbolic_entry.insert(0, "Ingrese dirección simbólica")
         
-        # Botón de traducción
         translate_btn = ttk.Button(input_frame, text="🔍 Traducir Dirección",
                                   command=self.translate_address)
         translate_btn.grid(row=0, column=2, padx=10)
         
-        # Frame para mostrar etapas de traducción
         translation_frame = ttk.LabelFrame(frame, text="Etapas de Traducción", padding=10)
         translation_frame.pack(fill='both', expand=True, padx=10, pady=5)
         
@@ -91,34 +74,30 @@ class MMUSimulatorGUI:
                                                          height=15, 
                                                          font=('Courier', 10),
                                                          bg='#ecf0f1',
-                                                         fg='#2c3e50')
+                                                         fg='#2c3e50',
+                                                         wrap=tk.WORD) # Added wrap
         self.translation_text.pack(fill='both', expand=True)
+        self.translation_text.config(state=tk.DISABLED)
     
     def create_process_management_tab(self, parent):
-        """Crear pestaña de gestión de procesos"""
         frame = ttk.Frame(parent, style='Custom.TFrame')
         parent.add(frame, text="⚙️ Gestión de Procesos")
         
-        # Frame superior: creación de procesos
         process_frame = ttk.LabelFrame(frame, text="Crear Proceso", padding=10)
         process_frame.pack(fill='x', padx=10, pady=5)
         
-        # PID del proceso
         ttk.Label(process_frame, text="PID:").grid(row=0, column=0, sticky='w')
         self.pid_entry = ttk.Entry(process_frame, width=10)
         self.pid_entry.grid(row=0, column=1, padx=5)
         
-        # Tamaño en KB
         ttk.Label(process_frame, text="Tamaño (KB):").grid(row=0, column=2, sticky='w', padx=(20,0))
         self.size_entry = ttk.Entry(process_frame, width=10)
         self.size_entry.grid(row=0, column=3, padx=5)
         
-        # Botón crear proceso
         create_btn = ttk.Button(process_frame, text="➕ Crear Proceso",
                                command=self.create_process)
         create_btn.grid(row=0, column=4, padx=10)
         
-        # Frame para selección de proceso activo
         active_frame = ttk.LabelFrame(frame, text="Proceso Activo", padding=10)
         active_frame.pack(fill='x', padx=10, pady=5)
         
@@ -130,7 +109,6 @@ class MMUSimulatorGUI:
         self.active_process_combo.grid(row=0, column=1, padx=5)
         self.active_process_combo.bind('<<ComboboxSelected>>', self.set_active_process)
         
-        # Algoritmo de reemplazo
         ttk.Label(active_frame, text="Algoritmo:").grid(row=0, column=2, sticky='w', padx=(20,0))
         self.algorithm_var = tk.StringVar(value="FIFO")
         algorithm_combo = ttk.Combobox(active_frame, 
@@ -140,21 +118,18 @@ class MMUSimulatorGUI:
         algorithm_combo.grid(row=0, column=3, padx=5)
         algorithm_combo.bind('<<ComboboxSelected>>', self.change_algorithm)
         
-        # Frame para simulación de accesos
         access_frame = ttk.LabelFrame(frame, text="Simulación de Accesos", padding=10)
         access_frame.pack(fill='x', padx=10, pady=5)
         
-        # Botones de simulación
-        ttk.Button(access_frame, text="🎯 Acceso Aleatorio",
-                  command=self.random_access).pack(side='left', padx=5)
+        ttk.Button(access_frame, text="Acceso Aleatorio",
+                  command=self.gui_random_access).pack(side='left', padx=5) # Renamed to avoid conflict
         
-        ttk.Button(access_frame, text="🔥 Simular Carga Intensiva",
-                  command=self.intensive_load).pack(side='left', padx=5)
+        ttk.Button(access_frame, text="Simular Carga Intensiva",
+                  command=self.gui_intensive_load).pack(side='left', padx=5) # Renamed
         
-        ttk.Button(access_frame, text="🔄 Reiniciar Sistema",
+        ttk.Button(access_frame, text="Reiniciar Sistema",
                   command=self.reset_system).pack(side='left', padx=5)
         
-        # Frame para mostrar procesos
         list_frame = ttk.LabelFrame(frame, text="Lista de Procesos", padding=10)
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
         
@@ -162,161 +137,152 @@ class MMUSimulatorGUI:
                                        columns=('PID', 'Tamaño', 'Páginas', 'Estado'),
                                        show='headings')
         
-        # Configurar columnas
         self.process_tree.heading('PID', text='PID')
         self.process_tree.heading('Tamaño', text='Tamaño (KB)')
         self.process_tree.heading('Páginas', text='Páginas')
         self.process_tree.heading('Estado', text='Estado')
         
-        self.process_tree.column('PID', width=80)
-        self.process_tree.column('Tamaño', width=100)
-        self.process_tree.column('Páginas', width=80)
-        self.process_tree.column('Estado', width=100)
+        self.process_tree.column('PID', width=80, anchor='center')
+        self.process_tree.column('Tamaño', width=100, anchor='center')
+        self.process_tree.column('Páginas', width=80, anchor='center')
+        self.process_tree.column('Estado', width=100, anchor='center')
         
         self.process_tree.pack(fill='both', expand=True)
     
     def create_system_status_tab(self, parent):
-        """Crear pestaña de estado del sistema"""
         frame = ttk.Frame(parent, style='Custom.TFrame')
         parent.add(frame, text="🖥️ Estado del Sistema")
         
-        # Frame izquierdo: Memoria física
-        left_frame = ttk.LabelFrame(frame, text="Memoria Física", padding=10)
-        left_frame.pack(side='left', fill='both', expand=True, padx=(10,5), pady=10)
+        main_pane = ttk.PanedWindow(frame, orient=tk.HORIZONTAL)
+        main_pane.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Left frame: Memory and Swap
+        left_vertical_pane = ttk.PanedWindow(main_pane, orient=tk.VERTICAL)
+        main_pane.add(left_vertical_pane, weight=1)
+
+        memory_frame = ttk.LabelFrame(left_vertical_pane, text="Memoria Física", padding=10)
+        left_vertical_pane.add(memory_frame, weight=5) # Give more weight to memory display
         
-        self.memory_canvas = tk.Canvas(left_frame, bg='white', height=400)
+        self.memory_canvas = tk.Canvas(memory_frame, bg='white', highlightthickness=0)
         self.memory_canvas.pack(fill='both', expand=True)
         
-        # Frame derecho: Tabla de páginas
-        right_frame = ttk.LabelFrame(frame, text="Tabla de Páginas del Proceso Activo", padding=10)
-        right_frame.pack(side='right', fill='both', expand=True, padx=(5,10), pady=10)
+        swap_frame = ttk.LabelFrame(left_vertical_pane, text="Espacio de Intercambio (Swap)", padding=10)
+        left_vertical_pane.add(swap_frame, weight=1) # Less weight to swap display
         
-        self.page_table_tree = ttk.Treeview(right_frame,
-                                          columns=('Página', 'Marco', 'Estado', 'Ref', 'Mod'),
+        self.swap_text = scrolledtext.ScrolledText(swap_frame, height=5, bg='#f8f9fa', fg='#333', wrap=tk.WORD) # Use ScrolledText
+        self.swap_text.pack(fill='both', expand=True)
+        self.swap_text.config(state=tk.DISABLED)
+        
+        # Right frame: Page Table
+        page_table_frame = ttk.LabelFrame(main_pane, text="Tabla de Páginas del Proceso Activo", padding=10)
+        main_pane.add(page_table_frame, weight=1)
+        
+        self.page_table_tree = ttk.Treeview(page_table_frame,
+                                          columns=('Página', 'Marco', 'Estado', 'Ref', 'Mod', 'Acceso'), # Added Acceso
                                           show='headings')
         
-        # Configurar columnas de tabla de páginas
-        for col in ['Página', 'Marco', 'Estado', 'Ref', 'Mod']:
+        for col in ['Página', 'Marco', 'Estado', 'Ref', 'Mod', 'Acceso']:
             self.page_table_tree.heading(col, text=col)
-            self.page_table_tree.column(col, width=80)
-        
+            self.page_table_tree.column(col, width=70, anchor='center') # Adjusted width
+        self.page_table_tree.column('Estado', width=90)
+
+
         self.page_table_tree.pack(fill='both', expand=True)
-        
-        # Frame inferior: Espacio de intercambio
-        swap_frame = ttk.LabelFrame(frame, text="Espacio de Intercambio (Swap)", padding=10)
-        swap_frame.pack(fill='x', padx=10, pady=(0,10))
-        
-        self.swap_text = tk.Text(swap_frame, height=4, bg='#f8f9fa', fg='#333')
-        self.swap_text.pack(fill='x')
     
     def create_analysis_tab(self, parent):
-        """Crear pestaña de análisis y estadísticas"""
         frame = ttk.Frame(parent, style='Custom.TFrame')
         parent.add(frame, text="📊 Análisis y Estadísticas")
         
-        # Frame superior: Estadísticas
         stats_frame = ttk.LabelFrame(frame, text="Estadísticas del Sistema", padding=15)
         stats_frame.pack(fill='x', padx=10, pady=10)
         
-        # Grid para estadísticas
         stats_grid = ttk.Frame(stats_frame)
         stats_grid.pack(fill='x')
         
-        # Etiquetas de estadísticas
         self.stats_labels = {}
         stats_items = [
-            ('Accesos Totales:', 'access_count'),
-            ('Page Hits:', 'page_hits'),
-            ('Page Faults:', 'page_faults'),
-            ('Tasa de Aciertos:', 'hit_rate'),
-            ('Tasa de Fallos:', 'fault_rate'),
-            ('Swaps In:', 'swaps_in'),
-            ('Swaps Out:', 'swaps_out'),
-            ('Páginas en Swap:', 'pages_in_swap'),
-            ('Algoritmo:', 'algorithm')
+            ('Accesos Totales:', 'access_count'), ('Page Hits:', 'page_hits'), ('Page Faults:', 'page_faults'),
+            ('Tasa de Aciertos:', 'hit_rate'), ('Tasa de Fallos:', 'fault_rate'), ('Swaps In:', 'swaps_in'),
+            ('Swaps Out:', 'swaps_out'), ('Páginas en Swap:', 'pages_in_swap'), ('Algoritmo:', 'algorithm')
         ]
         
-        row = 0
-        col = 0
-        for label_text, key in stats_items:
+        row, col_limit = 0, 3
+        for i, (label_text, key) in enumerate(stats_items):
             ttk.Label(stats_grid, text=label_text, font=('Arial', 10, 'bold')).grid(
-                row=row, column=col*2, sticky='w', padx=5, pady=2)
+                row=row, column=(i % col_limit)*2, sticky='w', padx=5, pady=3)
             
-            self.stats_labels[key] = ttk.Label(stats_grid, text="0", 
-                                             font=('Arial', 10))
-            self.stats_labels[key].grid(row=row, column=col*2+1, sticky='w', padx=5, pady=2)
-            
-            col += 1
-            if col >= 3:
-                col = 0
+            self.stats_labels[key] = ttk.Label(stats_grid, text="0", font=('Arial', 10))
+            self.stats_labels[key].grid(row=row, column=(i % col_limit)*2+1, sticky='e', padx=5, pady=3)
+            if (i + 1) % col_limit == 0:
                 row += 1
         
-        # Frame para análisis de rendimiento
         analysis_frame = ttk.LabelFrame(frame, text="Análisis de Rendimiento", padding=10)
         analysis_frame.pack(fill='both', expand=True, padx=10, pady=10)
         
-        # Botón para detectar thrashing
-        thrashing_btn = ttk.Button(analysis_frame, text="🔍 Detectar Hiperpaginación",
+        thrashing_btn = ttk.Button(analysis_frame, text="Detectar Hiperpaginación",
                                  command=self.check_thrashing)
         thrashing_btn.pack(pady=5)
         
-        # Área de texto para análisis
         self.analysis_text = scrolledtext.ScrolledText(analysis_frame,
-                                                     height=15,
+                                                     height=10, # Adjusted height
                                                      font=('Courier', 10),
                                                      bg='#f8f9fa',
-                                                     fg='#2c3e50')
+                                                     fg='#2c3e50',
+                                                     wrap=tk.WORD)
         self.analysis_text.pack(fill='both', expand=True)
+        self.analysis_text.config(state=tk.DISABLED)
         
-        # Insertar análisis inicial
         self.show_initial_analysis()
     
     def translate_address(self):
-        """Traducir dirección simbólica"""
         symbolic_addr = self.symbolic_entry.get().strip()
         if not symbolic_addr:
-            messagebox.showwarning("Advertencia", "Ingrese una dirección simbólica")
+            messagebox.showwarning("Advertencia", "Ingrese una dirección simbólica.")
             return
 
         if not self.controller.get_current_process():
-            messagebox.showwarning("Advertencia", "Seleccione un proceso activo")
+            messagebox.showwarning("Advertencia", "Seleccione o cree un proceso activo.")
             return
 
-        # Realizar traducción
         stages, logical_addr = self.controller.simulate_address_translation_stages(symbolic_addr)
         
-        # Mostrar resultados
+        self.translation_text.config(state=tk.NORMAL)
         self.translation_text.delete(1.0, tk.END)
         self.translation_text.insert(tk.END, "🔄 PROCESO DE TRADUCCIÓN DE DIRECCIONES\n")
-        self.translation_text.insert(tk.END, "=" * 50 + "\n\n")
+        self.translation_text.insert(tk.END, "=" * 60 + "\n\n") # Increased separator length
         
         for stage in stages:
             self.translation_text.insert(tk.END, stage + "\n")
         
-        # Mostrar detalles de la MMU
-        page_number = logical_addr // self.controller.get_page_size()
-        offset = logical_addr % self.controller.get_page_size()
-        
-        self.translation_text.insert(tk.END, f"\n📋 DETALLES DE LA MMU:\n")
-        self.translation_text.insert(tk.END, f"Número de página: {page_number}\n")
-        self.translation_text.insert(tk.END, f"Offset: {offset}\n")
-        self.translation_text.insert(tk.END, f"Tamaño de página: {self.controller.get_page_size()} bytes\n")
-        
-        # Actualizar displays
+        if logical_addr is not None:
+            page_number = logical_addr // self.controller.get_page_size()
+            offset = logical_addr % self.controller.get_page_size()
+            
+            self.translation_text.insert(tk.END, f"\n📋 DETALLES DE LA MMU (para Dirección Lógica 0x{logical_addr:08X}):\n")
+            self.translation_text.insert(tk.END, f"  Número de página virtual: {page_number}\n")
+            self.translation_text.insert(tk.END, f"  Desplazamiento (Offset): {offset} (0x{offset:03X})\n") # Hex offset
+            self.translation_text.insert(tk.END, f"  Tamaño de página: {self.controller.get_page_size()} bytes\n")
+        else:
+            self.translation_text.insert(tk.END, "\nNo se pudieron calcular detalles de MMU (dirección lógica no determinada o error previo).\n")
+            
+        self.translation_text.config(state=tk.DISABLED)
         self.update_displays()
     
     def create_process(self):
-        """Crear un nuevo proceso"""
         try:
             pid = self.pid_entry.get().strip()
-            size_kb = int(self.size_entry.get().strip())
+            size_kb_str = self.size_entry.get().strip()
             
             if not pid:
-                messagebox.showwarning("Advertencia", "Ingrese un PID válido")
+                messagebox.showwarning("Advertencia", "Ingrese un PID válido.")
+                return
+            if not size_kb_str:
+                messagebox.showwarning("Advertencia", "Ingrese un tamaño para el proceso.")
                 return
             
+            size_kb = int(size_kb_str)
             if size_kb <= 0:
-                messagebox.showwarning("Advertencia", "El tamaño debe ser mayor a 0")
+                messagebox.showwarning("Advertencia", "El tamaño debe ser mayor a 0 KB.")
                 return
             
             success, message = self.controller.create_process(pid, size_kb)
@@ -325,228 +291,315 @@ class MMUSimulatorGUI:
                 messagebox.showinfo("Éxito", message)
                 self.pid_entry.delete(0, tk.END)
                 self.size_entry.delete(0, tk.END)
-                self.update_process_list()
+                self.update_displays() # Full update
             else:
                 messagebox.showerror("Error", message)
                 
         except ValueError:
-            messagebox.showerror("Error", "Ingrese un tamaño numérico válido")
+            messagebox.showerror("Error", "Ingrese un tamaño numérico válido para KB.")
     
     def set_active_process(self, event=None):
-        """Establecer proceso activo"""
-        selected = self.active_process_var.get()
-        if selected and selected in self.controller.get_processes():
-            self.controller.set_current_process(selected)
+        selected_pid = self.active_process_var.get()
+        if selected_pid: # Combobox ensures it's from the list of existing PIDs
+            self.controller.set_current_process(selected_pid)
             self.update_displays()
 
     def change_algorithm(self, event=None):
-        """Cambiar algoritmo de reemplazo"""
         algorithm = self.algorithm_var.get()
         self.controller.change_algorithm(algorithm)
         self.update_displays()
 
-    def random_access(self):
-        """Simular acceso aleatorio a memoria"""
-        if not self.controller.get_current_process():
-            messagebox.showwarning("Advertencia", "Seleccione un proceso activo")
+    def gui_random_access(self): # Renamed
+        current_pid = self.controller.get_current_process()
+        if not current_pid:
+            messagebox.showwarning("Advertencia", "Seleccione un proceso activo.")
             return
         
-        # Generar dirección aleatoria dentro del espacio del proceso
-        process_data = self.controller.get_processes()[self.controller.get_current_process()]
+        process_data = self.controller.get_processes().get(current_pid)
+        if not process_data or process_data['pages_needed'] == 0:
+            messagebox.showinfo("Información", f"El proceso {current_pid} no tiene páginas o no existe.")
+            return
+
         max_address = process_data['pages_needed'] * self.controller.get_page_size() - 1
         random_address = random.randint(0, max_address)
         
-        # Simular acceso
-        self.simulate_memory_access(random_address)
+        # Call the corrected simulate_memory_access
+        self.simulate_gui_memory_access(random_address) # Calls the corrected GUI method
         
-        # Actualizar displays
-        self.update_displays()
-        
-        # Mostrar información
         page_num = random_address // self.controller.get_page_size()
-        messagebox.showinfo("Acceso Aleatorio", 
-                          f"Proceso: {self.controller.get_current_process()}\n"
-                          f"Dirección: 0x{random_address:08X}\n"
-                          f"Página: {page_num}")
+        # Optional: Show less intrusive info, or log it, instead of messagebox for every random access
+        # messagebox.showinfo("Acceso Aleatorio", 
+        #                   f"Proceso: {current_pid}\n"
+        #                   f"Dirección Virtual: 0x{random_address:08X}\n"
+        #                   f"Accediendo a Página: {page_num}")
+        # Update display for this specific access in the translation tab for feedback
+        self.translation_text.config(state=tk.NORMAL)
+        self.translation_text.insert(tk.END, f"\n---\n[Acceso Aleatorio] Proceso: {current_pid}, Dir Virtual: 0x{random_address:08X} (Página {page_num})\n")
+        # Get translation stages for this random access to show feedback
+        stages, _ = self.controller.simulate_address_translation_stages(f"random_access_to_0x{random_address:08X}")
+        for stage in stages:
+            self.translation_text.insert(tk.END, stage + "\n")
+        self.translation_text.see(tk.END) # Scroll to end
+        self.translation_text.config(state=tk.DISABLED)
 
-    def simulate_memory_access(self, address):
-        """Simular acceso a memoria"""
-        if not self.controller.get_current_process():
+
+    def simulate_gui_memory_access(self, address): # Renamed to avoid conflict with controller
+        """GUI method to trigger memory access simulation via the controller."""
+        current_pid = self.controller.get_current_process()
+        if not current_pid:
+            # This should be caught by the caller (e.g., gui_random_access)
             return
             
-        # Traducir dirección
-        physical_address = self.controller.translate_virtual_to_physical(address)
+        # Delegate to controller's simulate_memory_access method
+        # This call will handle translation, page faults, and updating modified bit
+        self.controller.simulate_memory_access(address)
         
-        # Simular operación de lectura/escritura
-        if physical_address is not None:
-            # Simular posible modificación (30% de probabilidad)
-            if random.random() < 0.3:
-                page_num = address // self.controller.get_page_size()
-                self.controller.get_processes()[self.controller.get_current_process()]['page_table'][page_num]['modified'] = True
+        # After access, update all relevant displays
+        self.update_displays()
 
-    def intensive_load(self):
-        """Simular carga intensiva de memoria"""
-        if not self.controller.get_current_process():
-            messagebox.showwarning("Advertencia", "Seleccione un proceso activo")
+    def gui_intensive_load(self): # Renamed
+        current_pid = self.controller.get_current_process()
+        if not current_pid:
+            messagebox.showwarning("Advertencia", "Seleccione un proceso activo.")
             return
         
-        # Realizar múltiples accesos aleatorios
-        for _ in range(50):
-            self.random_access()
-            time.sleep(0.05)  # Pequeña pausa para visualización
-            self.root.update()  # Actualizar GUI
+        process_data = self.controller.get_processes().get(current_pid)
+        if not process_data or process_data['pages_needed'] == 0:
+            messagebox.showinfo("Información", f"El proceso {current_pid} no tiene páginas para carga intensiva.")
+            return
+
+        # Provide feedback in translation tab
+        self.translation_text.config(state=tk.NORMAL)
+        self.translation_text.delete(1.0, tk.END) # Clear previous
+        self.translation_text.insert(tk.END, f"INICIANDO CARGA INTENSIVA PARA PROCESO {current_pid}\n")
+        self.translation_text.insert(tk.END, "=" * 60 + "\n\n")
+        self.translation_text.config(state=tk.DISABLED)
+
+        num_accesses = 20 # Reduced for faster UI response, was 50
+        for i in range(num_accesses):
+            max_address = process_data['pages_needed'] * self.controller.get_page_size() - 1
+            random_address = random.randint(0, max_address)
+            
+            # Call the corrected simulate_memory_access
+            self.simulate_gui_memory_access(random_address) # This updates displays internally too
+
+            # Update translation tab with info about this specific access
+            page_num = random_address // self.controller.get_page_size()
+            self.translation_text.config(state=tk.NORMAL)
+            self.translation_text.insert(tk.END, f"Acceso {i+1}/{num_accesses}: Dir Virtual 0x{random_address:08X} (Página {page_num})\n")
+            
+            # Get short status of this access for the log
+            # We can't directly get "hit" or "fault" message easily without re-translating
+            # So we rely on statistics updating. For more detailed log here, would need more complex return from controller.
+            # For now, just log the access. Detailed translation for individual addresses is via the "Traducir Dirección" button.
+
+            self.translation_text.see(tk.END) # Scroll to end
+            self.translation_text.config(state=tk.DISABLED)
+
+            time.sleep(0.02) # Shorter sleep for faster simulation
+            self.root.update_idletasks() 
         
-        # Verificar thrashing
-        thrashing, msg = self.controller.detect_thrashing()
-        if thrashing:
-            self.analysis_text.insert(tk.END, f"\n⚠️ {msg}\n")
+        self.translation_text.config(state=tk.NORMAL)
+        self.translation_text.insert(tk.END, "\nCARGA INTENSIVA COMPLETADA\n")
+        self.translation_text.see(tk.END)
+        self.translation_text.config(state=tk.DISABLED)
+
+        self.check_thrashing() 
+        self.update_displays() # Final comprehensive update
+
 
     def reset_system(self):
-        """Reiniciar el sistema de simulación"""
-        self.controller.reset_system()
-        self.update_displays()
-        messagebox.showinfo("Sistema Reiniciado", "Todos los procesos y estadísticas han sido reiniciados")
+        if messagebox.askyesno("Confirmar Reinicio", "Esto eliminará todos los procesos y estadísticas. ¿Continuar?"):
+            self.controller.reset_system()
+            self.active_process_var.set("") # Clear active process display
+            self.translation_text.config(state=tk.NORMAL)
+            self.translation_text.delete(1.0, tk.END)
+            self.translation_text.config(state=tk.DISABLED)
+            self.update_displays()
+            self.show_initial_analysis()
+            messagebox.showinfo("Sistema Reiniciado", "Todos los procesos y estadísticas han sido reiniciados.")
 
     def update_process_list(self):
-        """Actualizar la lista de procesos en la interfaz"""
         self.process_tree.delete(*self.process_tree.get_children())
         
-        # Actualizar combo de proceso activo
-        processes = list(self.controller.get_processes().keys())
-        self.active_process_combo['values'] = processes
+        processes_dict = self.controller.get_processes()
+        process_pids = list(processes_dict.keys())
+        self.active_process_combo['values'] = process_pids
         
-        if processes and not self.controller.get_current_process():
-            self.controller.set_current_process(processes[0])
-            self.active_process_var.set(processes[0])
-        
-        # Llenar treeview con procesos
-        for pid, data in self.controller.get_processes().items():
+        current_selection = self.active_process_var.get()
+        current_controller_pid = self.controller.get_current_process()
+
+        if not process_pids: # No processes exist
+            self.controller.set_current_process(None)
+            self.active_process_var.set("")
+        elif current_selection and current_selection in process_pids:
+             # If current selection is valid, ensure controller matches
+            if current_controller_pid != current_selection:
+                self.controller.set_current_process(current_selection)
+        elif current_controller_pid and current_controller_pid in process_pids:
+            # If controller has a valid PID but combobox doesn't match (e.g. after process creation)
+            self.active_process_var.set(current_controller_pid)
+        elif process_pids: # Processes exist, but no valid current selection or controller PID
+            self.controller.set_current_process(process_pids[0])
+            self.active_process_var.set(process_pids[0])
+        else: # Fallback: no processes, clear selection
+             self.controller.set_current_process(None)
+             self.active_process_var.set("")
+
+        for pid, data in processes_dict.items():
             status = "Activo" if pid == self.controller.get_current_process() else "Inactivo"
             self.process_tree.insert('', 'end', 
                                   values=(pid, data['size_kb'], data['pages_needed'], status))
 
     def update_memory_display(self):
-        """Actualizar visualización de memoria física"""
         self.memory_canvas.delete("all")
+        self.root.update_idletasks()
         canvas_width = self.memory_canvas.winfo_width()
         canvas_height = self.memory_canvas.winfo_height()
         
-        # Configuración de colores
-        colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c']
-        
-        # Dibujar marcos de memoria
-        frame_height = canvas_height / self.controller.get_page_size()
+        if canvas_width <= 1 or canvas_height <= 1: # Handles initial rendering where width/height can be 1
+            self.memory_canvas.create_text(50, 20, text="Cargando memoria...", fill="gray", anchor="nw")
+            return
+            
+        physical_pages_count = self.controller.get_physical_pages()
+        if physical_pages_count == 0:
+             self.memory_canvas.create_text(canvas_width/2, canvas_height/2, text="No hay memoria física", fill="red")
+             return
+
+        frame_height = canvas_height / physical_pages_count
         physical_memory = self.controller.get_physical_memory()
-        for i in range(len(physical_memory)):
+        
+        # Define a color map for processes for consistency
+        if not hasattr(self, 'process_color_map'):
+            self.process_color_map = {}
+        
+        base_colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#7f8c8d']
+
+        for i in range(len(physical_memory)): # Iterate up to actual physical_memory size
             y1 = i * frame_height
             y2 = (i + 1) * frame_height
             
-            # Determinar color basado en contenido
             content = physical_memory[i]
+            text_fill = '#2c3e50' # Dark text for light backgrounds
+            
             if content is None:
-                color = '#ecf0f1'  # Marco libre
+                frame_color = '#ecf0f1' 
                 text = f"Marco {i}\nLibre"
             else:
                 pid, page = content
-                color_idx = hash(pid) % len(colors)
-                color = colors[color_idx]
-                text = f"Marco {i}\nPID: {pid}\nPág: {page}"
-            
-            # Dibujar rectángulo para el marco
+                if pid not in self.process_color_map:
+                    self.process_color_map[pid] = base_colors[len(self.process_color_map) % len(base_colors)]
+                frame_color = self.process_color_map[pid]
+                text = f"Marco {i} ---- PID: {pid} ----- Página Virtual: {page}"
+                text_fill = '#ffffff' # Light text for dark backgrounds
+
             self.memory_canvas.create_rectangle(5, y1, canvas_width-5, y2, 
-                                              fill=color, outline='#2c3e50')
-            self.memory_canvas.create_text(canvas_width/2, (y1+y2)/2, 
-                                         text=text, font=('Arial', 8))
+                                              fill=frame_color, outline='#7f8c8d', width=1) # Subtle outline
+            # Ensure text fits and is centered
+            self.memory_canvas.create_text(canvas_width/2, y1 + frame_height/2, 
+                                         text=text, font=('Arial', 8 if frame_height > 30 else 7), fill=text_fill, justify=tk.CENTER)
 
     def update_page_table_display(self):
-        """Actualizar visualización de tabla de páginas"""
         self.page_table_tree.delete(*self.page_table_tree.get_children())
-        
-        current_process = self.controller.get_current_process()
-        if not current_process:
+        current_pid = self.controller.get_current_process()
+        if not current_pid:
             return
         
-        # Mostrar tabla de páginas del proceso activo
-        page_table = self.controller.get_page_table(current_process)
-        
-        for page_num, entry in page_table.items():
-            frame = entry['physical_frame'] if entry['physical_frame'] is not None else "-"
-            ref = "✓" if entry['referenced'] else "✗"
-            mod = "✓" if entry['modified'] else "✗"
-            
+        page_table = self.controller.get_page_table(current_pid)
+        if not page_table: # If process was deleted or table is empty
+            return
+
+        for page_num, entry in sorted(page_table.items()): # Sort by page_num for consistent order
+            frame = entry.get('physical_frame', '-') if entry.get('physical_frame') is not None else "-"
+            status_val = entry.get('status')
+            status_str = status_val.value if hasattr(status_val, 'value') else str(status_val)
+            ref = "✓" if entry.get('referenced', False) else "✗"
+            mod = "✓" if entry.get('modified', False) else "✗"
+            access_t = entry.get('access_time', '-') # LRU access time
+
             self.page_table_tree.insert('', 'end', 
-                                      values=(page_num, frame, entry['status'].value, ref, mod))
+                                      values=(page_num, frame, status_str, ref, mod, access_t))
 
     def update_swap_display(self):
-        """Actualizar visualización del espacio de intercambio"""
+        self.swap_text.config(state=tk.NORMAL)
         self.swap_text.delete(1.0, tk.END)
         
         swap_space = self.controller.get_swap_space()
         if not swap_space:
-            self.swap_text.insert(tk.END, "El espacio de intercambio está vacío")
-            return
-            
-        self.swap_text.insert(tk.END, f"Páginas en swap: {len(swap_space)}\n")
-        for i, (key, _) in enumerate(swap_space.items()):
-            if i < 5:  # Mostrar solo las primeras 5 para no saturar
-                self.swap_text.insert(tk.END, f"{key}\n")
-            elif i == 5:
-                self.swap_text.insert(tk.END, "...\n")
-                break
+            self.swap_text.insert(tk.END, "El espacio de intercambio está vacío.\n")
+        else:
+            self.swap_text.insert(tk.END, f"Páginas en swap: {len(swap_space)}\n")
+            self.swap_text.insert(tk.END, "--------------------\n")
+            # Sort for consistent display, show limited number
+            for i, (key, data_preview) in enumerate(sorted(swap_space.items())[:10]): # Show max 10 sorted
+                self.swap_text.insert(tk.END, f"{key}: ({data_preview[:20]}...)\n") # Preview of data
+            if len(swap_space) > 10:
+                self.swap_text.insert(tk.END, f"... y {len(swap_space) - 10} más.\n")
+        self.swap_text.config(state=tk.DISABLED)
 
     def update_stats_display(self):
-        """Actualizar visualización de estadísticas"""
         stats = self.controller.get_statistics()
-        
         for key, value in stats.items():
             if key in self.stats_labels:
                 if key in ['hit_rate', 'fault_rate']:
-                    self.stats_labels[key].config(text=f"{value:.2f}%")
+                    self.stats_labels[key].config(text=f"{float(value):.2f}%")
                 else:
                     self.stats_labels[key].config(text=str(value))
 
     def check_thrashing(self):
-        """Verificar condición de hiperpaginación"""
         thrashing, msg = self.controller.detect_thrashing()
         
+        self.analysis_text.config(state=tk.NORMAL)
         self.analysis_text.delete(1.0, tk.END)
-        self.analysis_text.insert(tk.END, "📈 ANÁLISIS DE RENDIMIENTO\n")
-        self.analysis_text.insert(tk.END, "=" * 50 + "\n\n")
+        self.analysis_text.insert(tk.END, "📈 ANÁLISIS DE RENDIMIENTO (HIPERPAGINACIÓN)\n")
+        self.analysis_text.insert(tk.END, "=" * 60 + "\n\n")
         
+        self.analysis_text.insert(tk.END, f"{msg}\n\n")
+
         if thrashing:
-            self.analysis_text.insert(tk.END, f"❌ {msg}\n\n")
-            self.analysis_text.insert(tk.END, "Posibles soluciones:\n")
-            self.analysis_text.insert(tk.END, "- Aumentar memoria física\n")
-            self.analysis_text.insert(tk.END, "- Reducir número de procesos\n")
-            self.analysis_text.insert(tk.END, "- Ajustar tamaño de páginas\n")
-            self.analysis_text.insert(tk.END, "- Optimizar algoritmo de reemplazo\n")
+            self.analysis_text.insert(tk.END, "🚨 ¡ALERTA DE HIPERPAGINACIÓN! El sistema está intercambiando páginas excesivamente.\n")
+            self.analysis_text.insert(tk.END, "Sugerencias para mitigar:\n")
+            self.analysis_text.insert(tk.END, "  - Reducir la cantidad de procesos activos concurrentemente.\n")
+            self.analysis_text.insert(tk.END, "  - Incrementar la memoria física disponible (si es posible en un sistema real).\n")
+            self.analysis_text.insert(tk.END, "  - Optimizar los algoritmos de acceso a datos de los procesos.\n")
+            self.analysis_text.insert(tk.END, "  - Considerar un algoritmo de reemplazo de páginas más eficiente si aplica.\n")
         else:
-            self.analysis_text.insert(tk.END, f"✅ {msg}\n\n")
+            self.analysis_text.insert(tk.END, "✅ El sistema parece estar operando sin hiperpaginación en este momento.\n")
         
-        # Mostrar estadísticas de rendimiento
-        stats = self.controller.get_statistics()
-        self.analysis_text.insert(tk.END, f"Tasa de aciertos: {stats['hit_rate']:.2f}%\n")
-        self.analysis_text.insert(tk.END, f"Tasa de fallos: {stats['fault_rate']:.2f}%\n")
-        self.analysis_text.insert(tk.END, f"Swaps realizados: {stats['swaps_in'] + stats['swaps_out']}\n")
+        stats = self.controller.get_statistics() # Get fresh stats
+        self.analysis_text.insert(tk.END, "\nEstadísticas relevantes:\n")
+        self.analysis_text.insert(tk.END, f"  Tasa de aciertos (Hit Rate): {stats.get('hit_rate', 0):.2f}%\n")
+        self.analysis_text.insert(tk.END, f"  Tasa de fallos (Fault Rate): {stats.get('fault_rate', 0):.2f}%\n")
+        self.analysis_text.insert(tk.END, f"  Total Swaps (In+Out): {stats.get('swaps_in', 0) + stats.get('swaps_out', 0)}\n")
+        self.analysis_text.config(state=tk.DISABLED)
 
     def show_initial_analysis(self):
-        """Mostrar análisis inicial"""
-        self.analysis_text.insert(tk.END, "📈 ANÁLISIS INICIAL\n")
-        self.analysis_text.insert(tk.END, "=" * 50 + "\n\n")
-        self.analysis_text.insert(tk.END, "Este simulador muestra:\n")
-        self.analysis_text.insert(tk.END, "- Traducción de direcciones por la MMU\n")
-        self.analysis_text.insert(tk.END, "- Paginación sobre demanda\n")
-        self.analysis_text.insert(tk.END, "- Algoritmos de reemplazo (FIFO/LRU)\n")
-        self.analysis_text.insert(tk.END, "- Detección de hiperpaginación\n\n")
-        self.analysis_text.insert(tk.END, "Instrucciones:\n")
-        self.analysis_text.insert(tk.END, "1. Cree procesos\n")
-        self.analysis_text.insert(tk.END, "2. Seleccione uno como activo\n")
-        self.analysis_text.insert(tk.END, "3. Realice accesos a memoria\n")
+        self.analysis_text.config(state=tk.NORMAL)
+        self.analysis_text.delete(1.0, tk.END)
+        self.analysis_text.insert(tk.END, "📊 ANÁLISIS INICIAL DEL SIMULADOR\n")
+        self.analysis_text.insert(tk.END, "=" * 60 + "\n\n")
+        self.analysis_text.insert(tk.END, "Este simulador permite explorar conceptos clave de la gestión de memoria:\n\n")
+        self.analysis_text.insert(tk.END, "🔹 Traducción de Direcciones:\n")
+        self.analysis_text.insert(tk.END, "   Observe cómo las direcciones simbólicas se transforman en físicas a través de la MMU y tablas de páginas.\n\n")
+        self.analysis_text.insert(tk.END, "🔹 Paginación por Demanda:\n")
+        self.analysis_text.insert(tk.END, "   Las páginas se cargan en memoria física solo cuando son necesarias (accedidas).\n\n")
+        self.analysis_text.insert(tk.END, "🔹 Algoritmos de Reemplazo (FIFO/LRU):\n")
+        self.analysis_text.insert(tk.END, "   Cuando la memoria está llena, se elige una página víctima para enviar a swap.\n\n")
+        self.analysis_text.insert(tk.END, "🔹 Detección de Hiperpaginación (Thrashing):\n")
+        self.analysis_text.insert(tk.END, "   Identifique cuándo el sistema gasta demasiado tiempo en paginación, afectando el rendimiento.\n\n")
+        self.analysis_text.insert(tk.END, " Pasos Sugeridos:\n")
+        self.analysis_text.insert(tk.END, "  1. Cree uno o más procesos en la pestaña 'Gestión de Procesos'.\n")
+        self.analysis_text.insert(tk.END, "  2. Seleccione un proceso como activo.\n")
+        self.analysis_text.insert(tk.END, "  3. Vaya a 'Traducción de Direcciones' e ingrese direcciones simbólicas (ej: 'var_X', 'data_array[10]').\n")
+        self.analysis_text.insert(tk.END, "  4. Use 'Acceso Aleatorio' y 'Carga Intensiva' para observar el comportamiento del sistema.\n")
+        self.analysis_text.insert(tk.END, "  5. Monitoree el 'Estado del Sistema' y las 'Estadísticas'.\n")
+        self.analysis_text.insert(tk.END, "  6. Pulse 'Detectar Hiperpaginación' después de una carga intensiva.\n")
+        self.analysis_text.config(state=tk.DISABLED)
 
     def update_displays(self):
-        """Actualizar todas las visualizaciones"""
-        self.update_process_list()
+        self.update_process_list() # Order matters: update process list first to ensure current_process is set
         self.update_memory_display()
         self.update_page_table_display()
         self.update_swap_display()
         self.update_stats_display()
+        # self.check_thrashing() # Optionally update thrashing status continuously, or only on demand
