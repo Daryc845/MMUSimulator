@@ -53,6 +53,9 @@ class Controller:
     def reset_system(self):
         self.simulator.reset_system()
 
+    def reset_memory_only(self):
+        self.simulator.reset_memory_only()
+
     def get_statistics(self):
         return self.simulator.get_statistics()
 

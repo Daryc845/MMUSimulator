@@ -118,6 +118,7 @@ class MemorySimulator:
             page_table[page_number]['status'] = PageStatus.VALID
             page_table[page_number]['access_time'] = self.access_count
             page_table[page_number]['referenced'] = True
+            page_table[page_number]['access_count'] = page_table[page_number].get('access_count', 0) + 1  # <-- Aquí
             self.physical_memory[free_frame] = (self.current_process, page_number)
             key = (self.current_process, page_number)
             self.fifo_queue.append(key)
@@ -226,3 +227,24 @@ class MemorySimulator:
         self.lru_usage.clear()
         self.swap_space.clear()
         self.recent_faults.clear()
+
+    def reset_memory_only(self):
+        self.physical_memory = [None] * self.physical_pages
+        self.swap_space.clear()
+        self.fifo_queue.clear()
+        self.lru_usage.clear()
+        self.page_faults = 0
+        self.page_hits = 0
+        self.swaps_in = 0
+        self.swaps_out = 0
+        self.access_count = 0
+        self.recent_faults.clear()
+        # Resetear estado de páginas pero NO eliminar procesos
+        for process in self.processes.values():
+            for entry in process['page_table'].values():
+                entry['physical_frame'] = None
+                entry['status'] = PageStatus.INVALID
+                entry['referenced'] = False
+                entry['modified'] = False
+                entry['access_time'] = 0
+                entry['access_count'] = 0

@@ -124,6 +124,9 @@ class MMUSimulatorGUI:
         # Botón para reiniciar sistema
         ttk.Button(process_frame, text="🔄 Reiniciar Sistema", command=self.reset_system).grid(row=0, column=6, padx=10)
         
+        # Botón para limpiar procesos
+        ttk.Button(process_frame, text="🧹 Limpiar procesos", command=self.reset_system).grid(row=0, column=6, padx=10)
+        
         # Frame para selección de proceso activo
         active_frame = ttk.LabelFrame(frame, text="Proceso Activo", padding=10)
         active_frame.pack(fill='x', padx=10, pady=5)
@@ -177,10 +180,9 @@ class MMUSimulatorGUI:
         page_table_frame.pack(side='left', fill='both', expand=True, padx=(0, 0), pady=5)
 
         self.proc_page_table_tree = ttk.Treeview(page_table_frame,
-            columns=('Página', 'Marco', 'Estado', 'Ref', 'Mod'),
+            columns=('Página', 'Marco', 'Estado'),
             show='headings')
-
-        for col in ['Página', 'Marco', 'Estado', 'Ref', 'Mod']:
+        for col in ['Página', 'Marco', 'Estado']:
             self.proc_page_table_tree.heading(col, text=col)
             self.proc_page_table_tree.column(col, width=80)
 
@@ -205,14 +207,39 @@ class MMUSimulatorGUI:
         ttk.Button(access_frame, text="🔄 Reiniciar Sistema",
                   command=self.reset_system).pack(side='left', padx=5)
 
+        ttk.Button(access_frame, text="🔄 Reiniciar Sistema",
+                  command=self.reset_memory_only).pack(side='left', padx=5)
+
+        # Frame para selección de proceso activo
+        active_frame = ttk.LabelFrame(frame, text="Proceso Activo", padding=10)
+        active_frame.pack(fill='x', padx=10, pady=5)
+
+        ttk.Label(active_frame, text="Proceso Activo:").grid(row=0, column=0, sticky='w')
+        self.active_process_var = tk.StringVar()
+        self.active_process_combo = ttk.Combobox(active_frame, 
+                                               textvariable=self.active_process_var,
+                                               state='readonly')
+        self.active_process_combo.grid(row=0, column=1, padx=5)
+        self.active_process_combo.bind('<<ComboboxSelected>>', self.set_active_process)
+
+        # Algoritmo de reemplazo
+        ttk.Label(active_frame, text="Algoritmo:").grid(row=0, column=2, sticky='w', padx=(20,0))
+        self.algorithm_var = tk.StringVar(value="FIFO")
+        algorithm_combo = ttk.Combobox(active_frame, 
+                                     textvariable=self.algorithm_var,
+                                     values=["FIFO", "LRU"],
+                                     state='readonly')
+        algorithm_combo.grid(row=0, column=3, padx=5)
+        algorithm_combo.bind('<<ComboboxSelected>>', self.change_algorithm)
+
         # Frame izquierdo: Tabla de páginas de todos los procesos
         left_frame = ttk.LabelFrame(frame, text="Tabla de Páginas de Todos los Procesos", padding=10)
         left_frame.pack(side='left', fill='both', expand=True, padx=(10,5), pady=10)
 
         self.all_pages_tree = ttk.Treeview(left_frame,
-            columns=('PID', 'Página', 'Estado', 'Marco', 'Ref', 'Mod'),
+            columns=('PID', 'Página', 'Estado', 'Marco'),
             show='headings')
-        for col in ['PID', 'Página', 'Estado', 'Marco', 'Ref', 'Mod']:
+        for col in ['PID', 'Página', 'Estado', 'Marco']:
             self.all_pages_tree.heading(col, text=col)
             self.all_pages_tree.column(col, width=80)
         self.all_pages_tree.pack(fill='both', expand=True)
@@ -467,6 +494,12 @@ class MMUSimulatorGUI:
         self.update_displays()
         messagebox.showinfo("Sistema Reiniciado", "Todos los procesos y estadísticas han sido reiniciados")
 
+    def reset_memory_only(self):
+        """Reiniciar solo memoria RAM, SWAP y estado de páginas, sin eliminar procesos"""
+        self.controller.reset_memory_only()
+        self.update_displays()
+        messagebox.showinfo("Memoria Reiniciada", "La memoria RAM, SWAP y los estados de páginas han sido reiniciados. Los procesos se mantienen.")
+
     def update_process_list(self):
         """Actualizar la lista de procesos en la interfaz"""
         self.process_tree.delete(*self.process_tree.get_children())
@@ -507,10 +540,8 @@ class MMUSimulatorGUI:
         page_table = self.controller.get_page_table(current_process)
         for page_num, entry in page_table.items():
             frame = entry['physical_frame'] if entry['physical_frame'] is not None else "-"
-            ref = "✓" if entry['referenced'] else "✗"
-            mod = "✓" if entry['modified'] else "✗"
             self.proc_page_table_tree.insert('', 'end', 
-                values=(page_num, frame, entry['status'].value, ref, mod))
+                values=(page_num, frame, entry['status'].value))
 
     def update_system_status_tab(self):
         """Actualizar la pestaña de estado del sistema con todas las tablas"""
@@ -519,10 +550,8 @@ class MMUSimulatorGUI:
         for pid, pdata in self.controller.get_processes().items():
             for page_num, entry in pdata['page_table'].items():
                 frame = entry['physical_frame'] if entry['physical_frame'] is not None else "-"
-                ref = "✓" if entry['referenced'] else "✗"
-                mod = "✓" if entry['modified'] else "✗"
                 self.all_pages_tree.insert('', 'end',
-                    values=(pid, page_num, entry['status'].value, frame, ref, mod))
+                    values=(pid, page_num, entry['status'].value, frame))
 
         # Memoria SWAP
         self.swap_tree.delete(*self.swap_tree.get_children())
