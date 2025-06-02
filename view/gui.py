@@ -97,6 +97,29 @@ class MMUSimulatorGUI:
         create_btn = ttk.Button(process_frame, text="➕ Crear Proceso",
                                command=self.create_process)
         create_btn.grid(row=0, column=4, padx=10)
+
+        # Botón para crear 10 procesos aleatorios
+        def crear_10_procesos():
+            existentes = set(self.controller.get_processes().keys())
+            pid = 0
+            creados = 0
+            while creados < 10:
+                while str(pid) in existentes:
+                    pid += 1
+                size = random.randint(1, 80)
+                success, _ = self.controller.create_process(str(pid), size)
+                if success:
+                    creados += 1
+                    existentes.add(str(pid))
+                pid += 1
+            self.update_displays()
+
+        crear_10_btn = ttk.Button(process_frame, text="Crear 10 procesos aleatorios", command=crear_10_procesos)
+        crear_10_btn.grid(row=0, column=5, padx=10)
+
+        # Botón para reiniciar sistema
+        reiniciar_btn = ttk.Button(process_frame, text="Reiniciar sistema", command=self.reset_system)
+        reiniciar_btn.grid(row=0, column=6, padx=10)
         
         list_frame = ttk.LabelFrame(frame, text="Lista de Procesos", padding=10)
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
@@ -409,8 +432,8 @@ class MMUSimulatorGUI:
     def reset_system(self):
         if messagebox.askyesno("Confirmar Reinicio", "Esto eliminará todos los procesos y estadísticas. ¿Continuar?"):
             self.controller.reset_system()
-            self.active_process_var.set("") # Clear active process display
-            self.active_process_var2.set("") # Clear active process display in second combo
+            self.active_process_var2.set("")  # Limpia selección del combo de proceso activo
+            self.active_process_combo2['values'] = []  # Limpia la lista de procesos en el combo
             self.translation_text.config(state=tk.NORMAL)
             self.translation_text.delete(1.0, tk.END)
             self.translation_text.config(state=tk.DISABLED)
