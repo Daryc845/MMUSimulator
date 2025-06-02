@@ -98,38 +98,6 @@ class MMUSimulatorGUI:
                                command=self.create_process)
         create_btn.grid(row=0, column=4, padx=10)
         
-        active_frame = ttk.LabelFrame(frame, text="Proceso Activo", padding=10)
-        active_frame.pack(fill='x', padx=10, pady=5)
-        
-        ttk.Label(active_frame, text="Proceso Activo:").grid(row=0, column=0, sticky='w')
-        self.active_process_var = tk.StringVar()
-        self.active_process_combo = ttk.Combobox(active_frame, 
-                                               textvariable=self.active_process_var,
-                                               state='readonly')
-        self.active_process_combo.grid(row=0, column=1, padx=5)
-        self.active_process_combo.bind('<<ComboboxSelected>>', self.set_active_process)
-        
-        ttk.Label(active_frame, text="Algoritmo:").grid(row=0, column=2, sticky='w', padx=(20,0))
-        self.algorithm_var = tk.StringVar(value="FIFO")
-        algorithm_combo = ttk.Combobox(active_frame, 
-                                     textvariable=self.algorithm_var,
-                                     values=["FIFO", "LRU"],
-                                     state='readonly')
-        algorithm_combo.grid(row=0, column=3, padx=5)
-        algorithm_combo.bind('<<ComboboxSelected>>', self.change_algorithm)
-        
-        access_frame = ttk.LabelFrame(frame, text="Simulación de Accesos", padding=10)
-        access_frame.pack(fill='x', padx=10, pady=5)
-        
-        ttk.Button(access_frame, text="Acceso Aleatorio",
-                  command=self.gui_random_access).pack(side='left', padx=5) # Renamed to avoid conflict
-        
-        ttk.Button(access_frame, text="Simular Carga Intensiva",
-                  command=self.gui_intensive_load).pack(side='left', padx=5) # Renamed
-        
-        ttk.Button(access_frame, text="Reiniciar Sistema",
-                  command=self.reset_system).pack(side='left', padx=5)
-        
         list_frame = ttk.LabelFrame(frame, text="Lista de Procesos", padding=10)
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
         
@@ -327,22 +295,16 @@ class MMUSimulatorGUI:
             messagebox.showerror("Error", "Ingrese un tamaño numérico válido para KB.")
     
     def set_active_process(self, event=None):
-        selected_pid = self.active_process_var.get() if hasattr(self, 'active_process_var') and self.active_process_var.get() else self.active_process_var2.get()
+        selected_pid = self.active_process_var2.get()
         if selected_pid:
             self.controller.set_current_process(selected_pid)
-            if hasattr(self, 'active_process_var'):
-                self.active_process_var.set(selected_pid)
-            if hasattr(self, 'active_process_var2'):
-                self.active_process_var2.set(selected_pid)
+            self.active_process_var2.set(selected_pid)
             self.update_displays()
 
     def change_algorithm(self, event=None):
-        algorithm = self.algorithm_var.get() if hasattr(self, 'algorithm_var') else self.algorithm_var2.get()
+        algorithm = self.algorithm_var2.get()
         self.controller.change_algorithm(algorithm)
-        if hasattr(self, 'algorithm_var'):
-            self.algorithm_var.set(algorithm)
-        if hasattr(self, 'algorithm_var2'):
-            self.algorithm_var2.set(algorithm)
+        self.algorithm_var2.set(algorithm)
         self.update_displays()
 
     def gui_random_access(self): # Renamed
@@ -461,33 +423,27 @@ class MMUSimulatorGUI:
         
         processes_dict = self.controller.get_processes()
         process_pids = list(processes_dict.keys())
-        self.active_process_combo['values'] = process_pids
+        # Solo actualiza el combo de la pestaña de simulación de carga
         self.active_process_combo2['values'] = process_pids
         
-        current_selection = self.active_process_var.get()
+        current_selection = self.active_process_var2.get()
         current_controller_pid = self.controller.get_current_process()
 
-        if not process_pids: # No processes exist
+        if not process_pids:
             self.controller.set_current_process(None)
-            self.active_process_var.set("")
             self.active_process_var2.set("")
         elif current_selection and current_selection in process_pids:
-             # If current selection is valid, ensure controller matches
             if current_controller_pid != current_selection:
                 self.controller.set_current_process(current_selection)
             self.active_process_var2.set(current_selection)
         elif current_controller_pid and current_controller_pid in process_pids:
-            # If controller has a valid PID but combobox doesn't match (e.g. after process creation)
-            self.active_process_var.set(current_controller_pid)
             self.active_process_var2.set(current_controller_pid)
-        elif process_pids: # Processes exist, but no valid current selection or controller PID
+        elif process_pids:
             self.controller.set_current_process(process_pids[0])
-            self.active_process_var.set(process_pids[0])
             self.active_process_var2.set(process_pids[0])
-        else: # Fallback: no processes, clear selection
-             self.controller.set_current_process(None)
-             self.active_process_var.set("")
-             self.active_process_var2.set("")
+        else:
+            self.controller.set_current_process(None)
+            self.active_process_var2.set("")
 
         for pid, data in processes_dict.items():
             status = "Activo" if pid == self.controller.get_current_process() else "Inactivo"
