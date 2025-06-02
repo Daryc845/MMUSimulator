@@ -18,6 +18,14 @@ class Controller:
     def change_algorithm(self, algorithm):
         if algorithm == "FIFO":
             self.simulator.replacement_algorithm = ReplacementAlgorithm.FIFO
+            # Reconstruir la cola FIFO con el orden actual de llegada
+            self.simulator.fifo_queue.clear()
+            for i, frame_content in enumerate(self.simulator.physical_memory):
+                if frame_content is not None:
+                    pid, page_num = frame_content
+                    key = (pid, page_num)
+                    if key not in self.simulator.fifo_queue:
+                        self.simulator.fifo_queue.append(key)
         elif algorithm == "LRU":
             self.simulator.replacement_algorithm = ReplacementAlgorithm.LRU
 

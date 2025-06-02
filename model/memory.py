@@ -213,10 +213,9 @@ class MemorySimulator:
             self.physical_memory[free_frame] = (self.current_process, page_number) 
             
             key = (self.current_process, page_number)
-            if self.replacement_algorithm == ReplacementAlgorithm.FIFO:
-                if key not in self.fifo_queue: 
-                    self.fifo_queue.append(key)
-            elif self.replacement_algorithm == ReplacementAlgorithm.LRU:
+            if key not in self.fifo_queue:
+                self.fifo_queue.append(key)
+            if self.replacement_algorithm == ReplacementAlgorithm.LRU:
                 if key in self.lru_usage: 
                     del self.lru_usage[key]
                 self.lru_usage[key] = self.access_count 
@@ -272,43 +271,25 @@ class MemorySimulator:
             return None 
 
     def replace_page_lru(self):
-        if not self.lru_usage:
-            # print("DEBUG: LRU usage está vacío, no hay página para reemplazar.")
-            return None
-        
-        try:
-            # victim_key = min(self.lru_usage, key=self.lru_usage.get) # Simpler way to get key with min value
-            victim_key = min(self.lru_usage.keys(), key=lambda k: self.lru_usage[k])
-
-        except ValueError: # lru_usage might be empty if concurrently modified (should not happen in single thread)
-             # print("DEBUG: LRU: lru_usage se vació inesperadamente.")
-             return None
-
-        victim_process_pid, victim_page_num = victim_key
-        
-        victim_frame = None
+        # Buscar todas las páginas actualmente en RAM
+        candidates = []
         for i, frame_content in enumerate(self.physical_memory):
-            if frame_content == (victim_process_pid, victim_page_num):
-                victim_frame = i
-                break
-        
-        if victim_frame is not None:
-            # Remove from LRU tracking *before* moving to swap to avoid re-adding if access happens during swap
-            del self.lru_usage[victim_key]
-
-            if victim_process_pid in self.processes and \
-               victim_page_num in self.processes[victim_process_pid]['page_table']:
-                self.move_page_to_swap(victim_process_pid, victim_page_num, victim_frame)
-                # print(f"DEBUG: LRU: Reemplazando P{victim_process_pid}, Página {victim_page_num} del Marco {victim_frame}")
-            else:
-                self.physical_memory[victim_frame] = None
-                # print(f"DEBUG: LRU: Contenido del marco {victim_frame} ({victim_process_pid}, {victim_page_num}) ya no es válido o proceso no existe. Marco liberado.")
-            return victim_frame
-        else:
-            # print(f"DEBUG: LRU: La página a reemplazar ({victim_process_pid}, {victim_page_num}) de lru_usage no se encontró en la memoria física. Eliminando de LRU y fallando reemplazo.")
-            if victim_key in self.lru_usage: # If somehow it's still there
-                del self.lru_usage[victim_key]
+            if frame_content is not None:
+                pid, page_num = frame_content
+                page_table = self.processes[pid]['page_table']
+                access_count = page_table[page_num].get('access_count', 0)
+                candidates.append((access_count, i, pid, page_num))
+        if not candidates:
             return None
+        # Ordenar por menor access_count, luego por menor índice de marco (para desempate)
+        candidates.sort()
+        _, victim_frame, victim_pid, victim_page_num = candidates[0]
+        # Sacar la página víctima
+        if victim_pid in self.processes and victim_page_num in self.processes[victim_pid]['page_table']:
+            self.move_page_to_swap(victim_pid, victim_page_num, victim_frame)
+        else:
+            self.physical_memory[victim_frame] = None
+        return victim_frame
 
     def move_page_to_swap(self, process_pid, page_number, frame_number):
         if process_pid in self.processes:
@@ -327,6 +308,11 @@ class MemorySimulator:
         self.swap_space[swap_key] = f"Datos de página {page_number} del proceso {process_pid}" 
         self.physical_memory[frame_number] = None 
         self.swaps_out += 1
+
+        key = (process_pid, page_number)
+        if key in self.fifo_queue:
+            self.fifo_queue.remove(key)
+
         # print(f"DEBUG: Movida P{process_pid}, Página {page_number} del Marco {frame_number} a Swap.")
 
     def detect_thrashing(self):
