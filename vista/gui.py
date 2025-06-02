@@ -58,7 +58,7 @@ class MMUSimulatorGUI:
         self.create_process_management_tab(notebook)
         
         # Pestaña 3: Estado del Sistema
-        self.create_system_status_tab(notebook)
+        self.create_load_simulation_tab(notebook)
         
         # Pestaña 4: Análisis y Estadísticas
         self.create_analysis_tab(notebook)
@@ -118,6 +118,12 @@ class MMUSimulatorGUI:
                                command=self.create_process)
         create_btn.grid(row=0, column=4, padx=10)
         
+        # Botón para generar 10 procesos
+        ttk.Button(process_frame, text="⚙️ Generar 10 procesos", command=self.generate_10_processes).grid(row=0, column=5, padx=10)
+
+        # Botón para reiniciar sistema
+        ttk.Button(process_frame, text="🔄 Reiniciar Sistema", command=self.reset_system).grid(row=0, column=6, padx=10)
+        
         # Frame para selección de proceso activo
         active_frame = ttk.LabelFrame(frame, text="Proceso Activo", padding=10)
         active_frame.pack(fill='x', padx=10, pady=5)
@@ -140,19 +146,7 @@ class MMUSimulatorGUI:
         algorithm_combo.grid(row=0, column=3, padx=5)
         algorithm_combo.bind('<<ComboboxSelected>>', self.change_algorithm)
         
-        # Frame para simulación de accesos
-        access_frame = ttk.LabelFrame(frame, text="Simulación de Accesos", padding=10)
-        access_frame.pack(fill='x', padx=10, pady=5)
-        
-        # Botones de simulación
-        ttk.Button(access_frame, text="🎯 Acceso Aleatorio",
-                  command=self.random_access).pack(side='left', padx=5)
-        
-        ttk.Button(access_frame, text="🔥 Simular Carga Intensiva",
-                  command=self.intensive_load).pack(side='left', padx=5)
-        
-        ttk.Button(access_frame, text="🔄 Reiniciar Sistema",
-                  command=self.reset_system).pack(side='left', padx=5)
+
         
         # --- NUEVO: Frame horizontal para tablas ---
         tables_frame = ttk.Frame(frame)
@@ -192,10 +186,24 @@ class MMUSimulatorGUI:
 
         self.proc_page_table_tree.pack(fill='both', expand=True)
     
-    def create_system_status_tab(self, parent):
-        """Crear pestaña de estado del sistema"""
+    def create_load_simulation_tab(self, parent):
+        """Crear pestaña de simulación de carga"""
         frame = ttk.Frame(parent, style='Custom.TFrame')
-        parent.add(frame, text="🖥️ Estado del Sistema")
+        parent.add(frame, text="⚡ Simulación de carga")
+
+        # Frame para simulación de accesos
+        access_frame = ttk.LabelFrame(frame, text="Simulación de Accesos", padding=10)
+        access_frame.pack(fill='x', padx=10, pady=5)
+        
+        # Botones de simulación
+        ttk.Button(access_frame, text="🎯 Acceso Aleatorio",
+                  command=self.random_access).pack(side='left', padx=5)
+        
+        ttk.Button(access_frame, text="🔥 Simular Carga Intensiva",
+                  command=self.intensive_load).pack(side='left', padx=5)
+        
+        ttk.Button(access_frame, text="🔄 Reiniciar Sistema",
+                  command=self.reset_system).pack(side='left', padx=5)
 
         # Frame izquierdo: Tabla de páginas de todos los procesos
         left_frame = ttk.LabelFrame(frame, text="Tabla de Páginas de Todos los Procesos", padding=10)
@@ -362,6 +370,25 @@ class MMUSimulatorGUI:
         except ValueError:
             messagebox.showerror("Error", "Ingrese un tamaño numérico válido")
     
+    def generate_10_processes(self):
+        """Generar 10 procesos con PID ascendente y tamaño aleatorio"""
+        existing_pids = set(int(pid) for pid in self.controller.get_processes().keys() if str(pid).isdigit())
+        next_pid = 1
+        created = 0
+        while created < 10:
+            while next_pid in existing_pids:
+                next_pid += 1
+            size_kb = random.randint(1, 256)
+            pid_str = str(next_pid)
+            success, _ = self.controller.create_process(pid_str, size_kb)
+            if success:
+                created += 1
+                existing_pids.add(next_pid)
+            next_pid += 1
+        self.update_process_list()
+        self.update_proc_page_table()
+        self.update_system_status_tab()
+
     def set_active_process(self, event=None):
         """Establecer proceso activo"""
         selected = self.active_process_var.get()
