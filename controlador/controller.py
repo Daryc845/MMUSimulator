@@ -85,3 +85,6 @@ class Controller:
 
     def get_replacement_algorithm(self):
         return self.simulator.replacement_algorithm
+
+    def translate_virtual_to_physical(self, address):
+        return self.simulator.translate_virtual_to_physical(address)
