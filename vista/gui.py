@@ -154,60 +154,88 @@ class MMUSimulatorGUI:
         ttk.Button(access_frame, text="🔄 Reiniciar Sistema",
                   command=self.reset_system).pack(side='left', padx=5)
         
-        # Frame para mostrar procesos
-        list_frame = ttk.LabelFrame(frame, text="Lista de Procesos", padding=10)
-        list_frame.pack(fill='both', expand=True, padx=10, pady=5)
-        
+        # --- NUEVO: Frame horizontal para tablas ---
+        tables_frame = ttk.Frame(frame)
+        tables_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        # Frame para mostrar procesos (izquierda)
+        list_frame = ttk.LabelFrame(tables_frame, text="Lista de Procesos", padding=10)
+        list_frame.pack(side='left', fill='both', expand=True, padx=(0, 20), pady=5)
+
         self.process_tree = ttk.Treeview(list_frame, 
                                        columns=('PID', 'Tamaño', 'Páginas', 'Estado'),
                                        show='headings')
-        
-        # Configurar columnas
+
         self.process_tree.heading('PID', text='PID')
         self.process_tree.heading('Tamaño', text='Tamaño (KB)')
         self.process_tree.heading('Páginas', text='Páginas')
         self.process_tree.heading('Estado', text='Estado')
-        
+
         self.process_tree.column('PID', width=80)
         self.process_tree.column('Tamaño', width=100)
         self.process_tree.column('Páginas', width=80)
         self.process_tree.column('Estado', width=100)
-        
+
         self.process_tree.pack(fill='both', expand=True)
+
+        # Frame para tabla de páginas (derecha)
+        page_table_frame = ttk.LabelFrame(tables_frame, text="Tabla de Páginas del Proceso Seleccionado", padding=10)
+        page_table_frame.pack(side='left', fill='both', expand=True, padx=(0, 0), pady=5)
+
+        self.proc_page_table_tree = ttk.Treeview(page_table_frame,
+            columns=('Página', 'Marco', 'Estado', 'Ref', 'Mod'),
+            show='headings')
+
+        for col in ['Página', 'Marco', 'Estado', 'Ref', 'Mod']:
+            self.proc_page_table_tree.heading(col, text=col)
+            self.proc_page_table_tree.column(col, width=80)
+
+        self.proc_page_table_tree.pack(fill='both', expand=True)
     
     def create_system_status_tab(self, parent):
         """Crear pestaña de estado del sistema"""
         frame = ttk.Frame(parent, style='Custom.TFrame')
         parent.add(frame, text="🖥️ Estado del Sistema")
-        
-        # Frame izquierdo: Memoria física
-        left_frame = ttk.LabelFrame(frame, text="Memoria Física", padding=10)
+
+        # Frame izquierdo: Tabla de páginas de todos los procesos
+        left_frame = ttk.LabelFrame(frame, text="Tabla de Páginas de Todos los Procesos", padding=10)
         left_frame.pack(side='left', fill='both', expand=True, padx=(10,5), pady=10)
-        
-        self.memory_canvas = tk.Canvas(left_frame, bg='white', height=400)
-        self.memory_canvas.pack(fill='both', expand=True)
-        
-        # Frame derecho: Tabla de páginas
-        right_frame = ttk.LabelFrame(frame, text="Tabla de Páginas del Proceso Activo", padding=10)
-        right_frame.pack(side='right', fill='both', expand=True, padx=(5,10), pady=10)
-        
-        self.page_table_tree = ttk.Treeview(right_frame,
-                                          columns=('Página', 'Marco', 'Estado', 'Ref', 'Mod'),
-                                          show='headings')
-        
-        # Configurar columnas de tabla de páginas
-        for col in ['Página', 'Marco', 'Estado', 'Ref', 'Mod']:
-            self.page_table_tree.heading(col, text=col)
-            self.page_table_tree.column(col, width=80)
-        
-        self.page_table_tree.pack(fill='both', expand=True)
-        
-        # Frame inferior: Espacio de intercambio
-        swap_frame = ttk.LabelFrame(frame, text="Espacio de Intercambio (Swap)", padding=10)
-        swap_frame.pack(fill='x', padx=10, pady=(0,10))
-        
-        self.swap_text = tk.Text(swap_frame, height=4, bg='#f8f9fa', fg='#333')
-        self.swap_text.pack(fill='x')
+
+        self.all_pages_tree = ttk.Treeview(left_frame,
+            columns=('PID', 'Página', 'Estado', 'Marco', 'Ref', 'Mod'),
+            show='headings')
+        for col in ['PID', 'Página', 'Estado', 'Marco', 'Ref', 'Mod']:
+            self.all_pages_tree.heading(col, text=col)
+            self.all_pages_tree.column(col, width=80)
+        self.all_pages_tree.pack(fill='both', expand=True)
+
+        # Frame central: Memoria SWAP
+        center_frame = ttk.LabelFrame(frame, text="Memoria SWAP", padding=10)
+        center_frame.pack(side='left', fill='both', expand=True, padx=(5,5), pady=10)
+
+        self.swap_tree = ttk.Treeview(center_frame,
+            columns=('PID', 'Página'),
+            show='headings')
+        self.swap_tree.heading('PID', text='PID')
+        self.swap_tree.heading('Página', text='Página')
+        self.swap_tree.column('PID', width=80)
+        self.swap_tree.column('Página', width=80)
+        self.swap_tree.pack(fill='both', expand=True)
+
+        # Frame derecho: RAM (páginas en memoria física)
+        right_frame = ttk.LabelFrame(frame, text="RAM (Páginas en Memoria Física)", padding=10)
+        right_frame.pack(side='left', fill='both', expand=True, padx=(5,10), pady=10)
+
+        self.ram_tree = ttk.Treeview(right_frame,
+            columns=('Marco', 'PID', 'Página'),
+            show='headings')
+        self.ram_tree.heading('Marco', text='Marco')
+        self.ram_tree.heading('PID', text='PID')
+        self.ram_tree.heading('Página', text='Página')
+        self.ram_tree.column('Marco', width=80)
+        self.ram_tree.column('PID', width=80)
+        self.ram_tree.column('Página', width=80)
+        self.ram_tree.pack(fill='both', expand=True)
     
     def create_analysis_tab(self, parent):
         """Crear pestaña de análisis y estadísticas"""
@@ -326,6 +354,8 @@ class MMUSimulatorGUI:
                 self.pid_entry.delete(0, tk.END)
                 self.size_entry.delete(0, tk.END)
                 self.update_process_list()
+                self.update_proc_page_table()
+                self.update_system_status_tab()
             else:
                 messagebox.showerror("Error", message)
                 
@@ -338,6 +368,7 @@ class MMUSimulatorGUI:
         if selected and selected in self.controller.get_processes():
             self.controller.set_current_process(selected)
             self.update_displays()
+            self.update_proc_page_table()
 
     def change_algorithm(self, event=None):
         """Cambiar algoritmo de reemplazo"""
@@ -424,75 +455,8 @@ class MMUSimulatorGUI:
             status = "Activo" if pid == self.controller.get_current_process() else "Inactivo"
             self.process_tree.insert('', 'end', 
                                   values=(pid, data['size_kb'], data['pages_needed'], status))
-
-    def update_memory_display(self):
-        """Actualizar visualización de memoria física"""
-        self.memory_canvas.delete("all")
-        canvas_width = self.memory_canvas.winfo_width()
-        canvas_height = self.memory_canvas.winfo_height()
         
-        # Configuración de colores
-        colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c']
-        
-        # Dibujar marcos de memoria
-        frame_height = canvas_height / self.controller.get_page_size()
-        physical_memory = self.controller.get_physical_memory()
-        for i in range(len(physical_memory)):
-            y1 = i * frame_height
-            y2 = (i + 1) * frame_height
-            
-            # Determinar color basado en contenido
-            content = physical_memory[i]
-            if content is None:
-                color = '#ecf0f1'  # Marco libre
-                text = f"Marco {i}\nLibre"
-            else:
-                pid, page = content
-                color_idx = hash(pid) % len(colors)
-                color = colors[color_idx]
-                text = f"Marco {i}\nPID: {pid}\nPág: {page}"
-            
-            # Dibujar rectángulo para el marco
-            self.memory_canvas.create_rectangle(5, y1, canvas_width-5, y2, 
-                                              fill=color, outline='#2c3e50')
-            self.memory_canvas.create_text(canvas_width/2, (y1+y2)/2, 
-                                         text=text, font=('Arial', 8))
-
-    def update_page_table_display(self):
-        """Actualizar visualización de tabla de páginas"""
-        self.page_table_tree.delete(*self.page_table_tree.get_children())
-        
-        current_process = self.controller.get_current_process()
-        if not current_process:
-            return
-        
-        # Mostrar tabla de páginas del proceso activo
-        page_table = self.controller.get_page_table(current_process)
-        
-        for page_num, entry in page_table.items():
-            frame = entry['physical_frame'] if entry['physical_frame'] is not None else "-"
-            ref = "✓" if entry['referenced'] else "✗"
-            mod = "✓" if entry['modified'] else "✗"
-            
-            self.page_table_tree.insert('', 'end', 
-                                      values=(page_num, frame, entry['status'].value, ref, mod))
-
-    def update_swap_display(self):
-        """Actualizar visualización del espacio de intercambio"""
-        self.swap_text.delete(1.0, tk.END)
-        
-        swap_space = self.controller.get_swap_space()
-        if not swap_space:
-            self.swap_text.insert(tk.END, "El espacio de intercambio está vacío")
-            return
-            
-        self.swap_text.insert(tk.END, f"Páginas en swap: {len(swap_space)}\n")
-        for i, (key, _) in enumerate(swap_space.items()):
-            if i < 5:  # Mostrar solo las primeras 5 para no saturar
-                self.swap_text.insert(tk.END, f"{key}\n")
-            elif i == 5:
-                self.swap_text.insert(tk.END, "...\n")
-                break
+        self.update_proc_page_table()
 
     def update_stats_display(self):
         """Actualizar visualización de estadísticas"""
@@ -504,6 +468,45 @@ class MMUSimulatorGUI:
                     self.stats_labels[key].config(text=f"{value:.2f}%")
                 else:
                     self.stats_labels[key].config(text=str(value))
+
+    def update_proc_page_table(self):
+        """Actualizar tabla de páginas en la pestaña de gestión de procesos"""
+        self.proc_page_table_tree.delete(*self.proc_page_table_tree.get_children())
+        current_process = self.controller.get_current_process()
+        if not current_process:
+            return
+        page_table = self.controller.get_page_table(current_process)
+        for page_num, entry in page_table.items():
+            frame = entry['physical_frame'] if entry['physical_frame'] is not None else "-"
+            ref = "✓" if entry['referenced'] else "✗"
+            mod = "✓" if entry['modified'] else "✗"
+            self.proc_page_table_tree.insert('', 'end', 
+                values=(page_num, frame, entry['status'].value, ref, mod))
+
+    def update_system_status_tab(self):
+        """Actualizar la pestaña de estado del sistema con todas las tablas"""
+        # Tabla de páginas de todos los procesos
+        self.all_pages_tree.delete(*self.all_pages_tree.get_children())
+        for pid, pdata in self.controller.get_processes().items():
+            for page_num, entry in pdata['page_table'].items():
+                frame = entry['physical_frame'] if entry['physical_frame'] is not None else "-"
+                ref = "✓" if entry['referenced'] else "✗"
+                mod = "✓" if entry['modified'] else "✗"
+                self.all_pages_tree.insert('', 'end',
+                    values=(pid, page_num, entry['status'].value, frame, ref, mod))
+
+        # Memoria SWAP
+        self.swap_tree.delete(*self.swap_tree.get_children())
+        for key in self.controller.get_swap_space().keys():
+            pid, page = key.split('_')
+            self.swap_tree.insert('', 'end', values=(pid, page))
+
+        # RAM (páginas en memoria física)
+        self.ram_tree.delete(*self.ram_tree.get_children())
+        for marco, content in enumerate(self.controller.get_physical_memory()):
+            if content is not None:
+                pid, page = content
+                self.ram_tree.insert('', 'end', values=(marco, pid, page))
 
     def check_thrashing(self):
         """Verificar condición de hiperpaginación"""
@@ -546,7 +549,6 @@ class MMUSimulatorGUI:
     def update_displays(self):
         """Actualizar todas las visualizaciones"""
         self.update_process_list()
-        self.update_memory_display()
-        self.update_page_table_display()
-        self.update_swap_display()
+        self.update_proc_page_table()
         self.update_stats_display()
+        self.update_system_status_tab()

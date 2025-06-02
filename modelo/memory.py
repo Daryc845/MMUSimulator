@@ -14,7 +14,7 @@ class ReplacementAlgorithm(Enum):
 class MemorySimulator:
     def __init__(self):
         self.page_size = 4096
-        self.physical_pages = 16
+        self.physical_pages = 15
         self.virtual_pages = 64
         self.physical_memory = [None] * self.physical_pages
         self.processes = {}
