@@ -151,41 +151,68 @@ class MMUSimulatorGUI:
     
     def create_system_status_tab(self, parent):
         frame = ttk.Frame(parent, style='Custom.TFrame')
-        parent.add(frame, text="🖥️ Estado del Sistema")
-        
+        parent.add(frame, text="⚡ Simulación de carga")  # Cambiado el nombre de la pestaña
+
+        active_frame = ttk.LabelFrame(frame, text="Proceso Activo", padding=10)
+        active_frame.pack(fill='x', padx=10, pady=5)
+
+        ttk.Label(active_frame, text="Proceso Activo:").grid(row=0, column=0, sticky='w')
+        self.active_process_var2 = tk.StringVar()
+        self.active_process_combo2 = ttk.Combobox(active_frame,
+                                                  textvariable=self.active_process_var2,
+                                                  state='readonly')
+        self.active_process_combo2.grid(row=0, column=1, padx=5)
+        self.active_process_combo2.bind('<<ComboboxSelected>>', self.set_active_process)
+
+        ttk.Label(active_frame, text="Algoritmo:").grid(row=0, column=2, sticky='w', padx=(20, 0))
+        self.algorithm_var2 = tk.StringVar(value="FIFO")
+        algorithm_combo2 = ttk.Combobox(active_frame,
+                                        textvariable=self.algorithm_var2,
+                                        values=["FIFO", "LRU"],
+                                        state='readonly')
+        algorithm_combo2.grid(row=0, column=3, padx=5)
+        algorithm_combo2.bind('<<ComboboxSelected>>', self.change_algorithm)
+
+        access_frame = ttk.LabelFrame(frame, text="Simulación de Accesos", padding=10)
+        access_frame.pack(fill='x', padx=10, pady=5)
+
+        ttk.Button(access_frame, text="Acceso Aleatorio",
+                   command=self.gui_random_access).pack(side='left', padx=5)
+        ttk.Button(access_frame, text="Simular Carga Intensiva",
+                   command=self.gui_intensive_load).pack(side='left', padx=5)
+        ttk.Button(access_frame, text="Reiniciar Sistema",
+                   command=self.reset_system).pack(side='left', padx=5)
+
         main_pane = ttk.PanedWindow(frame, orient=tk.HORIZONTAL)
         main_pane.pack(fill='both', expand=True, padx=10, pady=10)
 
-        # Left frame: Memory and Swap
         left_vertical_pane = ttk.PanedWindow(main_pane, orient=tk.VERTICAL)
-        main_pane.add(left_vertical_pane, weight=1)
+        main_pane.add(left_vertical_pane, weight=3)  # 60% aprox (3 de 5)
 
         memory_frame = ttk.LabelFrame(left_vertical_pane, text="Memoria Física", padding=10)
-        left_vertical_pane.add(memory_frame, weight=5) # Give more weight to memory display
-        
+        left_vertical_pane.add(memory_frame, weight=5)
+
         self.memory_canvas = tk.Canvas(memory_frame, bg='white', highlightthickness=0)
         self.memory_canvas.pack(fill='both', expand=True)
-        
+
         swap_frame = ttk.LabelFrame(left_vertical_pane, text="Espacio de Intercambio (Swap)", padding=10)
-        left_vertical_pane.add(swap_frame, weight=1) # Less weight to swap display
-        
-        self.swap_text = scrolledtext.ScrolledText(swap_frame, height=5, bg='#f8f9fa', fg='#333', wrap=tk.WORD) # Use ScrolledText
+        left_vertical_pane.add(swap_frame, weight=1)
+
+        self.swap_text = scrolledtext.ScrolledText(swap_frame, height=5, bg='#f8f9fa', fg='#333', wrap=tk.WORD)
         self.swap_text.pack(fill='both', expand=True)
         self.swap_text.config(state=tk.DISABLED)
-        
-        # Right frame: Page Table
+
         page_table_frame = ttk.LabelFrame(main_pane, text="Tabla de Páginas del Proceso Activo", padding=10)
-        main_pane.add(page_table_frame, weight=1)
-        
+        main_pane.add(page_table_frame, weight=2)
+
         self.page_table_tree = ttk.Treeview(page_table_frame,
-                                          columns=('Página', 'Marco', 'Estado', 'Ref', 'Mod', 'Acceso'), # Added Acceso
-                                          show='headings')
-        
+                                            columns=('Página', 'Marco', 'Estado', 'Ref', 'Mod', 'Acceso'),
+                                            show='headings')
+
         for col in ['Página', 'Marco', 'Estado', 'Ref', 'Mod', 'Acceso']:
             self.page_table_tree.heading(col, text=col)
-            self.page_table_tree.column(col, width=70, anchor='center') # Adjusted width
+            self.page_table_tree.column(col, width=70, anchor='center')
         self.page_table_tree.column('Estado', width=90)
-
 
         self.page_table_tree.pack(fill='both', expand=True)
     
@@ -299,14 +326,22 @@ class MMUSimulatorGUI:
             messagebox.showerror("Error", "Ingrese un tamaño numérico válido para KB.")
     
     def set_active_process(self, event=None):
-        selected_pid = self.active_process_var.get()
-        if selected_pid: # Combobox ensures it's from the list of existing PIDs
+        selected_pid = self.active_process_var.get() if hasattr(self, 'active_process_var') and self.active_process_var.get() else self.active_process_var2.get()
+        if selected_pid:
             self.controller.set_current_process(selected_pid)
+            if hasattr(self, 'active_process_var'):
+                self.active_process_var.set(selected_pid)
+            if hasattr(self, 'active_process_var2'):
+                self.active_process_var2.set(selected_pid)
             self.update_displays()
 
     def change_algorithm(self, event=None):
-        algorithm = self.algorithm_var.get()
+        algorithm = self.algorithm_var.get() if hasattr(self, 'algorithm_var') else self.algorithm_var2.get()
         self.controller.change_algorithm(algorithm)
+        if hasattr(self, 'algorithm_var'):
+            self.algorithm_var.set(algorithm)
+        if hasattr(self, 'algorithm_var2'):
+            self.algorithm_var2.set(algorithm)
         self.update_displays()
 
     def gui_random_access(self): # Renamed
@@ -412,6 +447,7 @@ class MMUSimulatorGUI:
         if messagebox.askyesno("Confirmar Reinicio", "Esto eliminará todos los procesos y estadísticas. ¿Continuar?"):
             self.controller.reset_system()
             self.active_process_var.set("") # Clear active process display
+            self.active_process_var2.set("") # Clear active process display in second combo
             self.translation_text.config(state=tk.NORMAL)
             self.translation_text.delete(1.0, tk.END)
             self.translation_text.config(state=tk.DISABLED)
@@ -425,6 +461,7 @@ class MMUSimulatorGUI:
         processes_dict = self.controller.get_processes()
         process_pids = list(processes_dict.keys())
         self.active_process_combo['values'] = process_pids
+        self.active_process_combo2['values'] = process_pids
         
         current_selection = self.active_process_var.get()
         current_controller_pid = self.controller.get_current_process()
@@ -432,19 +469,24 @@ class MMUSimulatorGUI:
         if not process_pids: # No processes exist
             self.controller.set_current_process(None)
             self.active_process_var.set("")
+            self.active_process_var2.set("")
         elif current_selection and current_selection in process_pids:
              # If current selection is valid, ensure controller matches
             if current_controller_pid != current_selection:
                 self.controller.set_current_process(current_selection)
+            self.active_process_var2.set(current_selection)
         elif current_controller_pid and current_controller_pid in process_pids:
             # If controller has a valid PID but combobox doesn't match (e.g. after process creation)
             self.active_process_var.set(current_controller_pid)
+            self.active_process_var2.set(current_controller_pid)
         elif process_pids: # Processes exist, but no valid current selection or controller PID
             self.controller.set_current_process(process_pids[0])
             self.active_process_var.set(process_pids[0])
+            self.active_process_var2.set(process_pids[0])
         else: # Fallback: no processes, clear selection
              self.controller.set_current_process(None)
              self.active_process_var.set("")
+             self.active_process_var2.set("")
 
         for pid, data in processes_dict.items():
             status = "Activo" if pid == self.controller.get_current_process() else "Inactivo"
@@ -490,7 +532,11 @@ class MMUSimulatorGUI:
                 if pid not in self.process_color_map:
                     self.process_color_map[pid] = base_colors[len(self.process_color_map) % len(base_colors)]
                 frame_color = self.process_color_map[pid]
-                text = f"Marco {i} ---- PID: {pid} ----- Página Virtual: {page}"
+                page_table = self.controller.get_page_table(pid)
+                access_time = "-"
+                if page in page_table:
+                    access_time = page_table[page].get('access_time', '-')
+                text = f"Marco {i}\nPID: {pid}\nPágina: {page}\nAcceso: {access_time}"
                 text_fill = '#ffffff' # Light text for dark backgrounds
 
             self.memory_canvas.create_rectangle(5, y1, canvas_width-5, y2, 
