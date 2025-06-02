@@ -183,41 +183,39 @@ class MMUSimulatorGUI:
         ttk.Button(access_frame, text="Reiniciar Sistema",
                    command=self.reset_system).pack(side='left', padx=5)
 
+        # NUEVO LAYOUT: Un solo PanedWindow horizontal con tres paneles
         main_pane = ttk.PanedWindow(frame, orient=tk.HORIZONTAL)
         main_pane.pack(fill='both', expand=True, padx=10, pady=10)
 
-        left_vertical_pane = ttk.PanedWindow(main_pane, orient=tk.VERTICAL)
-        main_pane.add(left_vertical_pane, weight=3)  # 60%
-        main_pane.add(ttk.Frame(main_pane), weight=2)  # 40% (el frame derecho se reemplaza abajo)
+        # 1. Tabla de páginas (izquierda)
+        page_table_frame = ttk.LabelFrame(main_pane, text="Tabla de Páginas del Proceso Activo", padding=10)
+        self.page_table_tree = ttk.Treeview(page_table_frame,
+                                            columns=('Página', 'Marco', 'Estado', 'Acceso'),
+                                            show='headings')
+        for col in ['Página', 'Marco', 'Estado', 'Acceso']:
+            self.page_table_tree.heading(col, text=col)
+            self.page_table_tree.column(col, width=90, anchor='center')
+        self.page_table_tree.column('Estado', width=90)
+        self.page_table_tree.pack(fill='both', expand=True)
+        main_pane.add(page_table_frame, weight=1)  # 30%
 
-        memory_frame = ttk.LabelFrame(left_vertical_pane, text="Memoria Física", padding=10)
-        left_vertical_pane.add(memory_frame, weight=5)
+        # 2. Swap (centro)
+        swap_frame = ttk.LabelFrame(main_pane, text="Espacio de Intercambio (Swap)", padding=10)
+        self.swap_tree = ttk.Treeview(swap_frame, columns=('PID', 'Página', 'Accesos'), show='headings')
+        self.swap_tree.heading('PID', text='PID')
+        self.swap_tree.heading('Página', text='Página')
+        self.swap_tree.heading('Accesos', text='Accesos')
+        self.swap_tree.column('PID', width=80, anchor='center')
+        self.swap_tree.column('Página', width=80, anchor='center')
+        self.swap_tree.column('Accesos', width=80, anchor='center')
+        self.swap_tree.pack(fill='both', expand=True)
+        main_pane.add(swap_frame, weight=2)        # 20%
 
+        # 3. Memoria física (derecha)
+        memory_frame = ttk.LabelFrame(main_pane, text="Memoria Física", padding=10)
         self.memory_canvas = tk.Canvas(memory_frame, bg='white', highlightthickness=0)
         self.memory_canvas.pack(fill='both', expand=True)
-
-        swap_frame = ttk.LabelFrame(left_vertical_pane, text="Espacio de Intercambio (Swap)", padding=10)
-        left_vertical_pane.add(swap_frame, weight=1)
-
-        self.swap_text = scrolledtext.ScrolledText(swap_frame, height=5, bg='#f8f9fa', fg='#333', wrap=tk.WORD)
-        self.swap_text.pack(fill='both', expand=True)
-        self.swap_text.config(state=tk.DISABLED)
-
-        page_table_frame = ttk.LabelFrame(main_pane, text="Tabla de Páginas del Proceso Activo", padding=10)
-        main_pane.panes()
-        main_pane.forget(1)
-        main_pane.add(page_table_frame, weight=2)
-
-        self.page_table_tree = ttk.Treeview(page_table_frame,
-                                            columns=('Página', 'Marco', 'Estado', 'Ref', 'Mod', 'Acceso'),
-                                            show='headings')
-
-        for col in ['Página', 'Marco', 'Estado', 'Ref', 'Mod', 'Acceso']:
-            self.page_table_tree.heading(col, text=col)
-            self.page_table_tree.column(col, width=70, anchor='center')
-        self.page_table_tree.column('Estado', width=90)
-
-        self.page_table_tree.pack(fill='both', expand=True)
+        main_pane.add(memory_frame, weight=5)      # 50%
     
     def create_analysis_tab(self, parent):
         frame = ttk.Frame(parent, style='Custom.TFrame')
@@ -530,7 +528,7 @@ class MMUSimulatorGUI:
 
             if content is None:
                 frame_color = '#ecf0f1'
-                text = f"Marco {i}\nLibre"
+                text = f"Marco {i} | Libre"
             else:
                 pid, page = content
                 if pid not in self.process_color_map:
@@ -540,7 +538,7 @@ class MMUSimulatorGUI:
                 access_time = "-"
                 if page in page_table:
                     access_time = page_table[page].get('access_time', '-')
-                text = f"Marco {i}\nPID: {pid}\nPágina: {page}\nAcceso: {access_time}"
+                text = f"Marco {i} | PID: {pid} | Página: {page} | Acceso: {access_time}"
                 text_fill = '#ffffff'
 
             self.memory_canvas.create_rectangle(5, y1, canvas_width-5, y2,
@@ -555,36 +553,39 @@ class MMUSimulatorGUI:
             return
         
         page_table = self.controller.get_page_table(current_pid)
-        if not page_table: # If process was deleted or table is empty
+        if not page_table:
             return
 
-        for page_num, entry in sorted(page_table.items()): # Sort by page_num for consistent order
+        for page_num, entry in sorted(page_table.items()):
             frame = entry.get('physical_frame', '-') if entry.get('physical_frame') is not None else "-"
             status_val = entry.get('status')
             status_str = status_val.value if hasattr(status_val, 'value') else str(status_val)
-            ref = "✓" if entry.get('referenced', False) else "✗"
-            mod = "✓" if entry.get('modified', False) else "✗"
-            access_t = entry.get('access_time', '-') # LRU access time
-
+            access_t = entry.get('access_time', '-')
             self.page_table_tree.insert('', 'end', 
-                                      values=(page_num, frame, status_str, ref, mod, access_t))
+                                      values=(page_num, frame, status_str, access_t))
 
     def update_swap_display(self):
-        self.swap_text.config(state=tk.NORMAL)
-        self.swap_text.delete(1.0, tk.END)
-        
-        swap_space = self.controller.get_swap_space()
-        if not swap_space:
-            self.swap_text.insert(tk.END, "El espacio de intercambio está vacío.\n")
+        # Ahora actualiza la tabla en vez del texto
+        if hasattr(self, 'swap_tree'):
+            self.swap_tree.delete(*self.swap_tree.get_children())
+            swap_space = self.controller.get_swap_space()
+            for key in sorted(swap_space.keys()):
+                # key es del tipo "pid_pagina"
+                try:
+                    pid, pagina = key.split('_')
+                except ValueError:
+                    pid, pagina = key, "?"
+                # Buscar accesos en la tabla de páginas del proceso
+                page_table = self.controller.get_page_table(pid)
+                accesos = "-"
+                if page_table and pagina.isdigit():
+                    entry = page_table.get(int(pagina))
+                    if entry:
+                        accesos = entry.get('access_time', '-')
+                self.swap_tree.insert('', 'end', values=(pid, pagina, accesos))
         else:
-            self.swap_text.insert(tk.END, f"Páginas en swap: {len(swap_space)}\n")
-            self.swap_text.insert(tk.END, "--------------------\n")
-            # Sort for consistent display, show limited number
-            for i, (key, data_preview) in enumerate(sorted(swap_space.items())[:10]): # Show max 10 sorted
-                self.swap_text.insert(tk.END, f"{key}: ({data_preview[:20]}...)\n") # Preview of data
-            if len(swap_space) > 10:
-                self.swap_text.insert(tk.END, f"... y {len(swap_space) - 10} más.\n")
-        self.swap_text.config(state=tk.DISABLED)
+            # Fallback si swap_tree no existe (por ejemplo, en otras pestañas)
+            pass
 
     def update_stats_display(self):
         stats = self.controller.get_statistics()
