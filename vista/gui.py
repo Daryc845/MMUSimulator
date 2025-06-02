@@ -127,30 +127,6 @@ class MMUSimulatorGUI:
         # Botón para limpiar procesos
         ttk.Button(process_frame, text="🧹 Limpiar procesos", command=self.reset_system).grid(row=0, column=6, padx=10)
         
-        # Frame para selección de proceso activo
-        active_frame = ttk.LabelFrame(frame, text="Proceso Activo", padding=10)
-        active_frame.pack(fill='x', padx=10, pady=5)
-        
-        ttk.Label(active_frame, text="Proceso Activo:").grid(row=0, column=0, sticky='w')
-        self.active_process_var = tk.StringVar()
-        self.active_process_combo = ttk.Combobox(active_frame, 
-                                               textvariable=self.active_process_var,
-                                               state='readonly')
-        self.active_process_combo.grid(row=0, column=1, padx=5)
-        self.active_process_combo.bind('<<ComboboxSelected>>', self.set_active_process)
-        
-        # Algoritmo de reemplazo
-        ttk.Label(active_frame, text="Algoritmo:").grid(row=0, column=2, sticky='w', padx=(20,0))
-        self.algorithm_var = tk.StringVar(value="FIFO")
-        algorithm_combo = ttk.Combobox(active_frame, 
-                                     textvariable=self.algorithm_var,
-                                     values=["FIFO", "LRU"],
-                                     state='readonly')
-        algorithm_combo.grid(row=0, column=3, padx=5)
-        algorithm_combo.bind('<<ComboboxSelected>>', self.change_algorithm)
-        
-
-        
         # --- NUEVO: Frame horizontal para tablas ---
         tables_frame = ttk.Frame(frame)
         tables_frame.pack(fill='both', expand=True, padx=10, pady=5)
@@ -203,9 +179,6 @@ class MMUSimulatorGUI:
         
         ttk.Button(access_frame, text="🔥 Simular Carga Intensiva",
                   command=self.intensive_load).pack(side='left', padx=5)
-        
-        ttk.Button(access_frame, text="🔄 Reiniciar Sistema",
-                  command=self.reset_system).pack(side='left', padx=5)
 
         ttk.Button(access_frame, text="🔄 Reiniciar Sistema",
                   command=self.reset_memory_only).pack(side='left', padx=5)
