@@ -55,7 +55,8 @@ class MemorySimulator:
                 'status': PageStatus.INVALID,
                 'referenced': False,
                 'modified': False,
-                'access_time': 0
+                'access_time': 0,      # Último acceso global
+                'access_count': 0      # Número de accesos a esta página
             }
         
         self.processes[pid] = {
@@ -152,6 +153,7 @@ class MemorySimulator:
                 
                 page_entry['access_time'] = self.access_count 
                 page_entry['referenced'] = True
+                page_entry['access_count'] += 1  # <--- suma aquí
                 
                 key = (self.current_process, page_number)
                 if key in self.lru_usage: 
@@ -204,8 +206,9 @@ class MemorySimulator:
             
             page_table[page_number]['physical_frame'] = free_frame
             page_table[page_number]['status'] = PageStatus.VALID
-            page_table[page_number]['access_time'] = self.access_count 
-            page_table[page_number]['referenced'] = True 
+            page_table[page_number]['access_time'] = self.access_count
+            page_table[page_number]['referenced'] = True
+            page_table[page_number]['access_count'] += 1  # <--- suma aquí
 
             self.physical_memory[free_frame] = (self.current_process, page_number) 
             

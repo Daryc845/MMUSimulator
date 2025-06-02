@@ -345,21 +345,17 @@ class MMUSimulatorGUI:
         random_address = random.randint(0, max_address)
         
         # Call the corrected simulate_memory_access
-        self.simulate_gui_memory_access(random_address) # Calls the corrected GUI method
-        
+        self.simulate_gui_memory_access(random_address) # Esto ya hace el acceso
+
         page_num = random_address // self.controller.get_page_size()
-        # Optional: Show less intrusive info, or log it, instead of messagebox for every random access
-        # messagebox.showinfo("Acceso Aleatorio", 
-        #                   f"Proceso: {current_pid}\n"
-        #                   f"Dirección Virtual: 0x{random_address:08X}\n"
-        #                   f"Accediendo a Página: {page_num}")
+        # Elimina o comenta la siguiente línea para evitar doble acceso:
+        # stages, _ = self.controller.simulate_address_translation_stages(f"random_access_to_0x{random_address:08X}")
+        # for stage in stages:
+        #     self.translation_text.insert(tk.END, stage + "\n")
+
         # Update display for this specific access in the translation tab for feedback
         self.translation_text.config(state=tk.NORMAL)
         self.translation_text.insert(tk.END, f"\n---\n[Acceso Aleatorio] Proceso: {current_pid}, Dir Virtual: 0x{random_address:08X} (Página {page_num})\n")
-        # Get translation stages for this random access to show feedback
-        stages, _ = self.controller.simulate_address_translation_stages(f"random_access_to_0x{random_address:08X}")
-        for stage in stages:
-            self.translation_text.insert(tk.END, stage + "\n")
         self.translation_text.see(tk.END) # Scroll to end
         self.translation_text.config(state=tk.DISABLED)
 
@@ -514,10 +510,10 @@ class MMUSimulatorGUI:
                     self.process_color_map[pid] = base_colors[len(self.process_color_map) % len(base_colors)]
                 frame_color = self.process_color_map[pid]
                 page_table = self.controller.get_page_table(pid)
-                access_time = "-"
+                access_count = "-"
                 if page in page_table:
-                    access_time = page_table[page].get('access_time', '-')
-                text = f"Marco {i} | PID: {pid} | Página: {page} | Acceso: {access_time}"
+                    access_count = page_table[page].get('access_count', '-')
+                text = f"Marco {i} | PID: {pid} | Página: {page} | Accesos: {access_count}"
                 text_fill = '#ffffff'
 
             self.memory_canvas.create_rectangle(5, y1, canvas_width-5, y2,
@@ -540,31 +536,22 @@ class MMUSimulatorGUI:
             status_val = entry.get('status')
             status_str = status_val.value if hasattr(status_val, 'value') else str(status_val)
             access_t = entry.get('access_time', '-')
+            accesses = entry.get('access_count', '-')
             self.page_table_tree.insert('', 'end', 
-                                      values=(page_num, frame, status_str, access_t))
+                                      values=(page_num, frame, status_str, accesses))
 
     def update_swap_display(self):
-        # Ahora actualiza la tabla en vez del texto
-        if hasattr(self, 'swap_tree'):
-            self.swap_tree.delete(*self.swap_tree.get_children())
-            swap_space = self.controller.get_swap_space()
-            for key in sorted(swap_space.keys()):
-                # key es del tipo "pid_pagina"
-                try:
-                    pid, pagina = key.split('_')
-                except ValueError:
-                    pid, pagina = key, "?"
-                # Buscar accesos en la tabla de páginas del proceso
-                page_table = self.controller.get_page_table(pid)
-                accesos = "-"
-                if page_table and pagina.isdigit():
-                    entry = page_table.get(int(pagina))
-                    if entry:
-                        accesos = entry.get('access_time', '-')
-                self.swap_tree.insert('', 'end', values=(pid, pagina, accesos))
-        else:
-            # Fallback si swap_tree no existe (por ejemplo, en otras pestañas)
-            pass
+        self.swap_tree.delete(*self.swap_tree.get_children())
+        swap_space = self.controller.get_swap_space()
+        for key in sorted(swap_space.keys()):
+            pid, pagina = key.split('_')
+            page_table = self.controller.get_page_table(pid)
+            accesos = "-"
+            if page_table and pagina.isdigit():
+                entry = page_table.get(int(pagina))
+                if entry:
+                    accesos = entry.get('access_count', '-')
+            self.swap_tree.insert('', 'end', values=(pid, pagina, accesos))
 
     def update_stats_display(self):
         stats = self.controller.get_statistics()
