@@ -235,14 +235,16 @@ class MMUSimulatorGUI:
         right_frame.pack(side='left', fill='both', expand=True, padx=(5,10), pady=10)
 
         self.ram_tree = ttk.Treeview(right_frame,
-            columns=('Marco', 'PID', 'Página'),
+            columns=('Marco', 'PID', 'Página', 'Accesos'),
             show='headings')
         self.ram_tree.heading('Marco', text='Marco')
         self.ram_tree.heading('PID', text='PID')
         self.ram_tree.heading('Página', text='Página')
+        self.ram_tree.heading('Accesos', text='Accesos')
         self.ram_tree.column('Marco', width=80)
         self.ram_tree.column('PID', width=80)
         self.ram_tree.column('Página', width=80)
+        self.ram_tree.column('Accesos', width=80)
         self.ram_tree.pack(fill='both', expand=True)
     
     def create_analysis_tab(self, parent):
@@ -378,7 +380,7 @@ class MMUSimulatorGUI:
         while created < 10:
             while next_pid in existing_pids:
                 next_pid += 1
-            size_kb = random.randint(1, 256)
+            size_kb = random.randint(1, 60)
             pid_str = str(next_pid)
             success, _ = self.controller.create_process(pid_str, size_kb)
             if success:
@@ -533,7 +535,10 @@ class MMUSimulatorGUI:
         for marco, content in enumerate(self.controller.get_physical_memory()):
             if content is not None:
                 pid, page = content
-                self.ram_tree.insert('', 'end', values=(marco, pid, page))
+                # Obtener número de accesos de la página
+                page_table = self.controller.get_processes()[pid]['page_table']
+                access_count = page_table[page]['access_time'] if 'access_time' in page_table[page] else 0
+                self.ram_tree.insert('', 'end', values=(marco, pid, page, access_count))
 
     def check_thrashing(self):
         """Verificar condición de hiperpaginación"""

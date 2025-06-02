@@ -155,19 +155,20 @@ class MemorySimulator:
         return None
 
     def replace_page_lru(self):
-        if not self.lru_usage:
-            return None
-        victim_key = min(self.lru_usage.keys(), key=lambda k: self.lru_usage[k])
-        victim_process, victim_page = victim_key
-        victim_frame = None
-        for i, frame_content in enumerate(self.physical_memory):
-            if frame_content == (victim_process, victim_page):
-                victim_frame = i
-                break
-        if victim_frame is not None:
-            self.move_page_to_swap(victim_process, victim_page, victim_frame)
+        while self.lru_usage:
+            victim_key = min(self.lru_usage.keys(), key=lambda k: self.lru_usage[k])
+            victim_process, victim_page = victim_key
+            victim_frame = None
+            for i, frame_content in enumerate(self.physical_memory):
+                if frame_content == (victim_process, victim_page):
+                    victim_frame = i
+                    break
+            # Elimina SIEMPRE la entrada de lru_usage
             del self.lru_usage[victim_key]
-            return victim_frame
+            if victim_frame is not None:
+                self.move_page_to_swap(victim_process, victim_page, victim_frame)
+                return victim_frame
+            # Si no encontró el marco, intenta con el siguiente menos usado
         return None
 
     def move_page_to_swap(self, process_pid, page_number, frame_number):
