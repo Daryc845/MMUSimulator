@@ -41,7 +41,8 @@ class MemorySimulator:
                 'status': PageStatus.INVALID,
                 'referenced': False,
                 'modified': False,
-                'access_time': 0
+                'access_time': 0,
+                'access_count': 0   # <-- NUEVO: contador de accesos por página
             }
         self.processes[pid] = {
             'size_kb': size_kb,
@@ -86,8 +87,9 @@ class MemorySimulator:
                 self.page_hits += 1
                 physical_frame = page_entry['physical_frame']
                 physical_address = physical_frame * self.page_size + offset
-                page_entry['access_time'] = self.access_count
+                page_entry['access_time'] = self.access_count  # para LRU
                 page_entry['referenced'] = True
+                page_entry['access_count'] += 1  # <-- INCREMENTA AQUÍ
                 key = (self.current_process, page_number)
                 if key in self.lru_usage:
                     del self.lru_usage[key]

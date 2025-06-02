@@ -535,9 +535,8 @@ class MMUSimulatorGUI:
         for marco, content in enumerate(self.controller.get_physical_memory()):
             if content is not None:
                 pid, page = content
-                # Obtener número de accesos de la página
                 page_table = self.controller.get_processes()[pid]['page_table']
-                access_count = page_table[page]['access_time'] if 'access_time' in page_table[page] else 0
+                access_count = page_table[page]['access_count'] if 'access_count' in page_table[page] else 0
                 self.ram_tree.insert('', 'end', values=(marco, pid, page, access_count))
 
     def check_thrashing(self):
