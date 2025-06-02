@@ -151,7 +151,7 @@ class MMUSimulatorGUI:
     
     def create_system_status_tab(self, parent):
         frame = ttk.Frame(parent, style='Custom.TFrame')
-        parent.add(frame, text="⚡ Simulación de carga")  # Cambiado el nombre de la pestaña
+        parent.add(frame, text="⚡ Simulación de carga")
 
         active_frame = ttk.LabelFrame(frame, text="Proceso Activo", padding=10)
         active_frame.pack(fill='x', padx=10, pady=5)
@@ -187,7 +187,8 @@ class MMUSimulatorGUI:
         main_pane.pack(fill='both', expand=True, padx=10, pady=10)
 
         left_vertical_pane = ttk.PanedWindow(main_pane, orient=tk.VERTICAL)
-        main_pane.add(left_vertical_pane, weight=3)  # 60% aprox (3 de 5)
+        main_pane.add(left_vertical_pane, weight=3)  # 60%
+        main_pane.add(ttk.Frame(main_pane), weight=2)  # 40% (el frame derecho se reemplaza abajo)
 
         memory_frame = ttk.LabelFrame(left_vertical_pane, text="Memoria Física", padding=10)
         left_vertical_pane.add(memory_frame, weight=5)
@@ -203,6 +204,8 @@ class MMUSimulatorGUI:
         self.swap_text.config(state=tk.DISABLED)
 
         page_table_frame = ttk.LabelFrame(main_pane, text="Tabla de Páginas del Proceso Activo", padding=10)
+        main_pane.panes()
+        main_pane.forget(1)
         main_pane.add(page_table_frame, weight=2)
 
         self.page_table_tree = ttk.Treeview(page_table_frame,
@@ -498,34 +501,35 @@ class MMUSimulatorGUI:
         self.root.update_idletasks()
         canvas_width = self.memory_canvas.winfo_width()
         canvas_height = self.memory_canvas.winfo_height()
-        
-        if canvas_width <= 1 or canvas_height <= 1: # Handles initial rendering where width/height can be 1
+
+        max_frames = 10
+        physical_memory = self.controller.get_physical_memory()[:max_frames]
+        physical_pages_count = len(physical_memory)
+
+        if canvas_width <= 1 or canvas_height <= 1:
             self.memory_canvas.create_text(50, 20, text="Cargando memoria...", fill="gray", anchor="nw")
             return
-            
-        physical_pages_count = self.controller.get_physical_pages()
+
         if physical_pages_count == 0:
-             self.memory_canvas.create_text(canvas_width/2, canvas_height/2, text="No hay memoria física", fill="red")
-             return
+            self.memory_canvas.create_text(canvas_width/2, canvas_height/2, text="No hay memoria física", fill="red")
+            return
 
         frame_height = canvas_height / physical_pages_count
-        physical_memory = self.controller.get_physical_memory()
-        
-        # Define a color map for processes for consistency
+
         if not hasattr(self, 'process_color_map'):
             self.process_color_map = {}
-        
+
         base_colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#7f8c8d']
 
-        for i in range(len(physical_memory)): # Iterate up to actual physical_memory size
+        for i in range(physical_pages_count):
             y1 = i * frame_height
             y2 = (i + 1) * frame_height
-            
+
             content = physical_memory[i]
-            text_fill = '#2c3e50' # Dark text for light backgrounds
-            
+            text_fill = '#2c3e50'
+
             if content is None:
-                frame_color = '#ecf0f1' 
+                frame_color = '#ecf0f1'
                 text = f"Marco {i}\nLibre"
             else:
                 pid, page = content
@@ -537,13 +541,12 @@ class MMUSimulatorGUI:
                 if page in page_table:
                     access_time = page_table[page].get('access_time', '-')
                 text = f"Marco {i}\nPID: {pid}\nPágina: {page}\nAcceso: {access_time}"
-                text_fill = '#ffffff' # Light text for dark backgrounds
+                text_fill = '#ffffff'
 
-            self.memory_canvas.create_rectangle(5, y1, canvas_width-5, y2, 
-                                              fill=frame_color, outline='#7f8c8d', width=1) # Subtle outline
-            # Ensure text fits and is centered
-            self.memory_canvas.create_text(canvas_width/2, y1 + frame_height/2, 
-                                         text=text, font=('Arial', 8 if frame_height > 30 else 7), fill=text_fill, justify=tk.CENTER)
+            self.memory_canvas.create_rectangle(5, y1, canvas_width-5, y2,
+                                               fill=frame_color, outline='#7f8c8d', width=1)
+            self.memory_canvas.create_text(canvas_width/2, y1 + frame_height/2,
+                                          text=text, font=('Arial', 8 if frame_height > 30 else 7), fill=text_fill, justify=tk.CENTER)
 
     def update_page_table_display(self):
         self.page_table_tree.delete(*self.page_table_tree.get_children())

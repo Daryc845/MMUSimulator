@@ -14,9 +14,9 @@ class ReplacementAlgorithm(Enum):
 class MemorySimulator:
     def __init__(self):
         self.page_size = 4096
-        self.physical_pages = 16 # Número de marcos físicos disponibles
+        self.physical_pages = 10  # Número de marcos físicos disponibles (ahora 10)
         self.virtual_pages = 64  # Número máximo de páginas virtuales por proceso
-        self.physical_memory = [None] * self.physical_pages # Representa los marcos físicos
+        self.physical_memory = [None] * self.physical_pages  # Representa los marcos físicos
         self.processes = {} # Diccionario de procesos: PID -> {size_kb, pages_needed, page_table, base_address}
         self.current_process = None
         
