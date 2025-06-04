@@ -6,6 +6,11 @@ import time
 
 class MMUSimulatorGUI:
     def __init__(self, root):
+        """
+        Inicializa la interfaz gráfica principal del simulador MMU.
+        Args:
+            root (tk.Tk): Ventana raíz de Tkinter.
+        """
         self.root = root
         self.root.title("Simulador MMU y Gestión de Memoria Virtual")
         self.root.geometry("1200x800")
@@ -19,6 +24,9 @@ class MMUSimulatorGUI:
         self.root.after(100, self.update_displays) 
         
     def setup_styles(self):
+        """
+        Configura los estilos visuales personalizados para los widgets de la interfaz.
+        """
         style = ttk.Style()
         style.theme_use('clam')
         
@@ -38,6 +46,9 @@ class MMUSimulatorGUI:
                        borderwidth=2)
     
     def create_widgets(self):
+        """
+        Crea y organiza los widgets principales y pestañas de la interfaz.
+        """
         title_label = ttk.Label(self.root, 
                                text="🖥️ Simulador MMU y Gestión de Memoria Virtual",
                                style='Title.TLabel')
@@ -52,6 +63,11 @@ class MMUSimulatorGUI:
         self.create_analysis_tab(notebook)
     
     def create_address_translation_tab(self, parent):
+        """
+        Crea la pestaña de traducción de direcciones.
+        Args:
+            parent (ttk.Notebook): Notebook donde se añade la pestaña.
+        """
         frame = ttk.Frame(parent, style='Custom.TFrame')
         parent.add(frame, text="🔄 Traducción de Direcciones")
         
@@ -80,6 +96,11 @@ class MMUSimulatorGUI:
         self.translation_text.config(state=tk.DISABLED)
     
     def create_process_management_tab(self, parent):
+        """
+        Crea la pestaña de gestión de procesos.
+        Args:
+            parent (ttk.Notebook): Notebook donde se añade la pestaña.
+        """
         frame = ttk.Frame(parent, style='Custom.TFrame')
         parent.add(frame, text="⚙️ Gestión de Procesos")
         
@@ -141,6 +162,11 @@ class MMUSimulatorGUI:
         self.process_tree.pack(fill='both', expand=True)
     
     def create_system_status_tab(self, parent):
+        """
+        Crea la pestaña de simulación de carga y estado del sistema.
+        Args:
+            parent (ttk.Notebook): Notebook donde se añade la pestaña.
+        """
         frame = ttk.Frame(parent, style='Custom.TFrame')
         parent.add(frame, text="⚡ Simulación de carga")
 
@@ -174,7 +200,6 @@ class MMUSimulatorGUI:
         ttk.Button(access_frame, text="Reiniciar Sistema",
                    command=self.reset_system).pack(side='left', padx=5)
 
-        # NUEVO LAYOUT: Un solo PanedWindow horizontal con tres paneles
         main_pane = ttk.PanedWindow(frame, orient=tk.HORIZONTAL)
         main_pane.pack(fill='both', expand=True, padx=10, pady=10)
 
@@ -209,6 +234,11 @@ class MMUSimulatorGUI:
         main_pane.add(memory_frame, weight=5)      # 50%
     
     def create_analysis_tab(self, parent):
+        """
+        Crea la pestaña de análisis y estadísticas del sistema.
+        Args:
+            parent (ttk.Notebook): Notebook donde se añade la pestaña.
+        """
         frame = ttk.Frame(parent, style='Custom.TFrame')
         parent.add(frame, text="📊 Análisis y Estadísticas")
         
@@ -254,6 +284,9 @@ class MMUSimulatorGUI:
         self.show_initial_analysis()
     
     def translate_address(self):
+        """
+        Traduce la dirección simbólica ingresada y muestra las etapas de traducción.
+        """
         symbolic_addr = self.symbolic_entry.get().strip()
         if not symbolic_addr:
             messagebox.showwarning("Advertencia", "Ingrese una dirección simbólica.")
@@ -288,6 +321,9 @@ class MMUSimulatorGUI:
         self.update_displays()
     
     def create_process(self):
+        """
+        Crea un proceso nuevo con los datos ingresados en la interfaz.
+        """
         try:
             pid = self.pid_entry.get().strip()
             size_kb_str = self.size_entry.get().strip()
@@ -318,6 +354,11 @@ class MMUSimulatorGUI:
             messagebox.showerror("Error", "Ingrese un tamaño numérico válido para KB.")
     
     def set_active_process(self, event=None):
+        """
+        Cambia el proceso activo según la selección en la interfaz.
+        Args:
+            event: Evento de selección del combo (opcional).
+        """
         selected_pid = self.active_process_var2.get()
         if selected_pid:
             self.controller.set_current_process(selected_pid)
@@ -325,12 +366,20 @@ class MMUSimulatorGUI:
             self.update_displays()
 
     def change_algorithm(self, event=None):
+        """
+        Cambia el algoritmo de reemplazo de páginas según la selección en la interfaz.
+        Args:
+            event: Evento de selección del combo (opcional).
+        """
         algorithm = self.algorithm_var2.get()
         self.controller.change_algorithm(algorithm)
         self.algorithm_var2.set(algorithm)
         self.update_displays()
 
-    def gui_random_access(self): # Renamed
+    def gui_random_access(self): 
+        """
+        Realiza un acceso aleatorio a una dirección virtual del proceso activo desde la GUI.
+        """
         current_pid = self.controller.get_current_process()
         if not current_pid:
             messagebox.showwarning("Advertencia", "Seleccione un proceso activo.")
@@ -348,33 +397,33 @@ class MMUSimulatorGUI:
         self.simulate_gui_memory_access(random_address) # Esto ya hace el acceso
 
         page_num = random_address // self.controller.get_page_size()
-        # Elimina o comenta la siguiente línea para evitar doble acceso:
-        # stages, _ = self.controller.simulate_address_translation_stages(f"random_access_to_0x{random_address:08X}")
-        # for stage in stages:
-        #     self.translation_text.insert(tk.END, stage + "\n")
 
-        # Update display for this specific access in the translation tab for feedback
         self.translation_text.config(state=tk.NORMAL)
         self.translation_text.insert(tk.END, f"\n---\n[Acceso Aleatorio] Proceso: {current_pid}, Dir Virtual: 0x{random_address:08X} (Página {page_num})\n")
         self.translation_text.see(tk.END) # Scroll to end
         self.translation_text.config(state=tk.DISABLED)
 
 
-    def simulate_gui_memory_access(self, address): # Renamed to avoid conflict with controller
-        """GUI method to trigger memory access simulation via the controller."""
+    def simulate_gui_memory_access(self, address): 
+        """
+        Simula el acceso a una dirección virtual desde la GUI y actualiza la interfaz.
+        Args:
+            address (int): Dirección virtual a acceder.
+        """
         current_pid = self.controller.get_current_process()
         if not current_pid:
             # This should be caught by the caller (e.g., gui_random_access)
             return
             
-        # Delegate to controller's simulate_memory_access method
-        # This call will handle translation, page faults, and updating modified bit
         self.controller.simulate_memory_access(address)
         
         # After access, update all relevant displays
         self.update_displays()
 
-    def gui_intensive_load(self): # Renamed
+    def gui_intensive_load(self): 
+        """
+        Realiza múltiples accesos aleatorios para simular una carga intensiva desde la GUI.
+        """
         current_pid = self.controller.get_current_process()
         if not current_pid:
             messagebox.showwarning("Advertencia", "Seleccione un proceso activo.")
@@ -396,19 +445,13 @@ class MMUSimulatorGUI:
         for i in range(num_accesses):
             max_address = process_data['pages_needed'] * self.controller.get_page_size() - 1
             random_address = random.randint(0, max_address)
-            
-            # Call the corrected simulate_memory_access
+        
             self.simulate_gui_memory_access(random_address) # This updates displays internally too
 
             # Update translation tab with info about this specific access
             page_num = random_address // self.controller.get_page_size()
             self.translation_text.config(state=tk.NORMAL)
             self.translation_text.insert(tk.END, f"Acceso {i+1}/{num_accesses}: Dir Virtual 0x{random_address:08X} (Página {page_num})\n")
-            
-            # Get short status of this access for the log
-            # We can't directly get "hit" or "fault" message easily without re-translating
-            # So we rely on statistics updating. For more detailed log here, would need more complex return from controller.
-            # For now, just log the access. Detailed translation for individual addresses is via the "Traducir Dirección" button.
 
             self.translation_text.see(tk.END) # Scroll to end
             self.translation_text.config(state=tk.DISABLED)
@@ -426,6 +469,9 @@ class MMUSimulatorGUI:
 
 
     def reset_system(self):
+        """
+        Reinicia el sistema, eliminando todos los procesos y estadísticas, y actualiza la interfaz.
+        """
         if messagebox.askyesno("Confirmar Reinicio", "Esto eliminará todos los procesos y estadísticas. ¿Continuar?"):
             self.controller.reset_system()
             self.active_process_var2.set("")  # Limpia selección del combo de proceso activo
@@ -438,11 +484,13 @@ class MMUSimulatorGUI:
             messagebox.showinfo("Sistema Reiniciado", "Todos los procesos y estadísticas han sido reiniciados.")
 
     def update_process_list(self):
+        """
+        Actualiza la lista de procesos mostrada en la interfaz.
+        """
         self.process_tree.delete(*self.process_tree.get_children())
         
         processes_dict = self.controller.get_processes()
         process_pids = list(processes_dict.keys())
-        # Solo actualiza el combo de la pestaña de simulación de carga
         self.active_process_combo2['values'] = process_pids
         
         current_selection = self.active_process_var2.get()
@@ -470,6 +518,9 @@ class MMUSimulatorGUI:
                                   values=(pid, data['size_kb'], data['pages_needed'], status))
 
     def update_memory_display(self):
+        """
+        Actualiza la visualización gráfica de la memoria física en la interfaz.
+        """
         self.memory_canvas.delete("all")
         self.root.update_idletasks()
         canvas_width = self.memory_canvas.winfo_width()
@@ -522,6 +573,9 @@ class MMUSimulatorGUI:
                                           text=text, font=('Arial', 8 if frame_height > 30 else 7), fill=text_fill, justify=tk.CENTER)
 
     def update_page_table_display(self):
+        """
+        Actualiza la tabla de páginas del proceso activo en la interfaz.
+        """
         self.page_table_tree.delete(*self.page_table_tree.get_children())
         current_pid = self.controller.get_current_process()
         if not current_pid:
@@ -541,6 +595,9 @@ class MMUSimulatorGUI:
                                       values=(page_num, frame, status_str, accesses))
 
     def update_swap_display(self):
+        """
+        Actualiza la tabla de páginas en swap en la interfaz.
+        """
         self.swap_tree.delete(*self.swap_tree.get_children())
         swap_space = self.controller.get_swap_space()
         for key in sorted(swap_space.keys()):
@@ -554,6 +611,9 @@ class MMUSimulatorGUI:
             self.swap_tree.insert('', 'end', values=(pid, pagina, accesos))
 
     def update_stats_display(self):
+        """
+        Actualiza las estadísticas del sistema mostradas en la interfaz.
+        """
         stats = self.controller.get_statistics()
         for key, value in stats.items():
             if key in self.stats_labels:
@@ -563,13 +623,16 @@ class MMUSimulatorGUI:
                     self.stats_labels[key].config(text=str(value))
 
     def check_thrashing(self):
+        """
+        Analiza y muestra si hay hiperpaginación (thrashing) en el sistema.
+        """
         thrashing, msg = self.controller.detect_thrashing()
-        
+    
         self.analysis_text.config(state=tk.NORMAL)
         self.analysis_text.delete(1.0, tk.END)
         self.analysis_text.insert(tk.END, "📈 ANÁLISIS DE RENDIMIENTO (HIPERPAGINACIÓN)\n")
         self.analysis_text.insert(tk.END, "=" * 60 + "\n\n")
-        
+    
         self.analysis_text.insert(tk.END, f"{msg}\n\n")
 
         if thrashing:
@@ -579,17 +642,23 @@ class MMUSimulatorGUI:
             self.analysis_text.insert(tk.END, "  - Incrementar la memoria física disponible (si es posible en un sistema real).\n")
             self.analysis_text.insert(tk.END, "  - Optimizar los algoritmos de acceso a datos de los procesos.\n")
             self.analysis_text.insert(tk.END, "  - Considerar un algoritmo de reemplazo de páginas más eficiente si aplica.\n")
+            messagebox.showwarning("¡Hiperpaginación Detectada!", msg)
         else:
             self.analysis_text.insert(tk.END, "✅ El sistema parece estar operando sin hiperpaginación en este momento.\n")
-        
-        stats = self.controller.get_statistics() # Get fresh stats
+            messagebox.showinfo("Sin hiperpaginación", msg)
+    
+        stats = self.controller.get_statistics()
         self.analysis_text.insert(tk.END, "\nEstadísticas relevantes:\n")
         self.analysis_text.insert(tk.END, f"  Tasa de aciertos (Hit Rate): {stats.get('hit_rate', 0):.2f}%\n")
         self.analysis_text.insert(tk.END, f"  Tasa de fallos (Fault Rate): {stats.get('fault_rate', 0):.2f}%\n")
         self.analysis_text.insert(tk.END, f"  Total Swaps (In+Out): {stats.get('swaps_in', 0) + stats.get('swaps_out', 0)}\n")
         self.analysis_text.config(state=tk.DISABLED)
 
+
     def show_initial_analysis(self):
+        """
+        Muestra el análisis y explicación inicial del simulador en la pestaña de análisis.
+        """
         self.analysis_text.config(state=tk.NORMAL)
         self.analysis_text.delete(1.0, tk.END)
         self.analysis_text.insert(tk.END, "📊 ANÁLISIS INICIAL DEL SIMULADOR\n")
@@ -613,9 +682,11 @@ class MMUSimulatorGUI:
         self.analysis_text.config(state=tk.DISABLED)
 
     def update_displays(self):
+        """
+        Actualiza todos los paneles y visualizaciones de la interfaz gráfica.
+        """
         self.update_process_list() # Order matters: update process list first to ensure current_process is set
         self.update_memory_display()
         self.update_page_table_display()
         self.update_swap_display()
         self.update_stats_display()
-        # self.check_thrashing() # Optionally update thrashing status continuously, or only on demand
