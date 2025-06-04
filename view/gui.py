@@ -577,12 +577,12 @@ class MMUSimulatorGUI:
 
     def check_thrashing(self):
         thrashing, msg = self.controller.detect_thrashing()
-        
+    
         self.analysis_text.config(state=tk.NORMAL)
         self.analysis_text.delete(1.0, tk.END)
         self.analysis_text.insert(tk.END, "📈 ANÁLISIS DE RENDIMIENTO (HIPERPAGINACIÓN)\n")
         self.analysis_text.insert(tk.END, "=" * 60 + "\n\n")
-        
+    
         self.analysis_text.insert(tk.END, f"{msg}\n\n")
 
         if thrashing:
@@ -592,15 +592,18 @@ class MMUSimulatorGUI:
             self.analysis_text.insert(tk.END, "  - Incrementar la memoria física disponible (si es posible en un sistema real).\n")
             self.analysis_text.insert(tk.END, "  - Optimizar los algoritmos de acceso a datos de los procesos.\n")
             self.analysis_text.insert(tk.END, "  - Considerar un algoritmo de reemplazo de páginas más eficiente si aplica.\n")
+            messagebox.showwarning("¡Hiperpaginación Detectada!", msg)
         else:
             self.analysis_text.insert(tk.END, "✅ El sistema parece estar operando sin hiperpaginación en este momento.\n")
-        
-        stats = self.controller.get_statistics() # Get fresh stats
+            messagebox.showinfo("Sin hiperpaginación", msg)
+    
+        stats = self.controller.get_statistics()
         self.analysis_text.insert(tk.END, "\nEstadísticas relevantes:\n")
         self.analysis_text.insert(tk.END, f"  Tasa de aciertos (Hit Rate): {stats.get('hit_rate', 0):.2f}%\n")
         self.analysis_text.insert(tk.END, f"  Tasa de fallos (Fault Rate): {stats.get('fault_rate', 0):.2f}%\n")
         self.analysis_text.insert(tk.END, f"  Total Swaps (In+Out): {stats.get('swaps_in', 0) + stats.get('swaps_out', 0)}\n")
         self.analysis_text.config(state=tk.DISABLED)
+
 
     def show_initial_analysis(self):
         self.analysis_text.config(state=tk.NORMAL)
